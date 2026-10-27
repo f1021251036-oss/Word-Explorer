@@ -1,0 +1,790 @@
+# MASTER PROMPT FINAL — WORD EXPLORER
+## Educational Adventure Game untuk Siswa SMP
+
+Buat aplikasi pembelajaran kosakata bahasa Inggris bernama **Word Explorer**, sebuah game edukasi interaktif untuk siswa SMP. Aplikasi harus menggabungkan pembelajaran vocabulary, petualangan, peta dunia, level, kuis adaptif, cerita, pencapaian, dan sistem reward.
+
+**Prioritas utama:** bangun aplikasi yang benar-benar berfungsi, bukan sekadar mockup atau tampilan statis. Explorer Map harus memiliki desain visual yang konsisten dengan spesifikasi dan gambar referensi yang diberikan pengguna. Jangan mengganti konsep peta dengan dashboard biasa, daftar level, kartu-kartu kotak, atau ilustrasi generik.
+
+---
+
+# 1. IDENTITAS DAN DESAIN APLIKASI
+
+Nama aplikasi: **Word Explorer**
+
+Target pengguna: siswa SMP yang sedang belajar bahasa Inggris sebagai bahasa asing.
+
+Konsep visual: game petualangan fantasi dengan lingkungan kartun 3D, karakter penjelajah, peta dunia isometrik, jalur level, checkpoint, hutan, pulau, reruntuhan kuno, pegunungan, gua, dan wilayah geografis lainnya.
+
+Gunakan palet warna berikut:
+
+- Adventure Orange: `#D98327`
+- Explorer Cream: `#ECE8AF`
+- Forest Green: `#4A943E`
+- Deep Jungle Green: `#186049`
+
+Gunakan warna tambahan seperti biru laut, biru sungai, krem pasir, abu-abu batu, putih salju, dan warna kristal untuk memperkaya lingkungan. Warna tambahan tidak boleh menghilangkan identitas warna utama Word Explorer.
+
+Gaya antarmuka:
+- Kartun 3D yang menarik, ramah, dan cocok untuk remaja.
+- Tipografi jelas dan mudah dibaca.
+- Ikon konsisten.
+- Animasi halus dan responsif.
+- Kontras yang baik antara teks dan latar.
+- Navigasi mudah dipahami siswa SMP.
+- Responsif untuk desktop, tablet, dan ponsel.
+- Gunakan aset visual orisinal atau aset yang memiliki izin penggunaan.
+
+Hindari tampilan yang terlalu kekanak-kanakan, terlalu ramai, atau terlalu menyerupai dashboard administrasi.
+
+# 2. AUTENTIKASI DAN PROFIL PENGGUNA
+
+Sediakan sistem autentikasi dengan:
+- Login menggunakan Google.
+- Login menggunakan email dan password.
+- Registrasi akun.
+- Logout.
+- Pemulihan password.
+- Penyimpanan progres setiap pengguna secara terpisah.
+
+Pengguna baru harus melewati onboarding, kuesioner awal, dan diagnostic test sebelum memasuki jalur pembelajaran.
+
+Pengguna yang sudah menyelesaikan onboarding dan diagnostic test tidak perlu mengulanginya setiap login. Mereka langsung kembali ke progres terakhir.
+
+Simpan status onboarding, hasil diagnostik, jalur pembelajaran, level yang terbuka, jawaban kuis, vocabulary yang telah dipelajari, streak, dan reward.
+
+Gunakan autentikasi yang aman. Jangan menyimpan password dalam teks biasa. Terapkan otorisasi pada sisi server agar pengguna tidak bisa membuka progres atau data pribadi pengguna lain.
+
+# 3. KUESIONER DAN DIAGNOSTIC TEST
+
+Setelah registrasi pertama kali, tampilkan kuesioner singkat untuk memahami pengalaman belajar pengguna.
+
+Pertanyaan dapat mencakup:
+- Pengalaman belajar bahasa Inggris.
+- Perkiraan kemampuan vocabulary.
+- Frekuensi belajar.
+- Tingkat kenyamanan membaca bahasa Inggris.
+- Kesulitan yang dirasakan.
+- Tujuan belajar.
+
+Setelah kuesioner, berikan diagnostic test untuk memperkirakan tingkat vocabulary dan pemahaman pengguna.
+
+Diagnostic test harus:
+- Mengukur kemampuan aktual, bukan hanya mengandalkan jawaban kuesioner.
+- Memiliki variasi soal yang sesuai tingkat kesulitan.
+- Memberikan hasil diagnostik yang tersimpan.
+- Menentukan jalur awal LOW, MIDDLE, atau HIGH berdasarkan aturan klasifikasi yang dapat dikonfigurasi.
+- Menjelaskan hasil kepada pengguna dengan bahasa sederhana.
+
+Jangan mengklaim hasil diagnostic test sebagai sertifikasi CEFR resmi.
+
+# 4. TIGA JALUR PEMBELAJARAN
+
+Buat tiga jalur yang terpisah: LOW, MIDDLE, dan HIGH.
+
+Setiap jalur memiliki peta, konten, level, progres, dan penyesuaian kesulitan sendiri.
+
+## LOW — Beginner Explorer
+
+Target: A1–A2, dengan materi yang didominasi A1.
+
+Karakteristik:
+- Bahasa antarmuka utama adalah bahasa Indonesia.
+- Penjelasan vocabulary menggunakan bahasa Indonesia yang sederhana.
+- Materi dimulai dari kata-kata dasar dan kosakata sehari-hari.
+- Target awal 10 vocabulary baru per hari.
+- Pengguna hanya dapat memasuki peta LOW.
+- Soal menggunakan instruksi sederhana, gambar, pilihan ganda, pencocokan kata, dan latihan kontekstual.
+
+## MIDDLE — Skilled Explorer
+
+Target: A2–B1, dengan materi yang didominasi A2.
+
+Karakteristik:
+- Bahasa antarmuka menggunakan bahasa Inggris sederhana.
+- Bahasa Indonesia dapat digunakan sebagai bantuan bila diperlukan.
+- Materi lebih beragam dan mulai mencakup konteks, frasa, serta kalimat sederhana.
+- Target awal 15–20 vocabulary baru per hari.
+- Pengguna dapat memasuki peta LOW dan MIDDLE.
+- Peta LOW yang telah terbuka tetap dapat diakses untuk mengulang materi.
+
+## HIGH — Master Explorer
+
+Target: B1–B2.
+
+Karakteristik:
+- Bahasa antarmuka menggunakan bahasa Inggris.
+- Materi mencakup kosakata lebih kompleks, kolokasi, penggunaan kata dalam konteks, dan pemahaman bacaan.
+- Target awal 25–30 vocabulary baru per hari.
+- Pengguna dapat memasuki peta LOW, MIDDLE, dan HIGH.
+- Peta tingkat sebelumnya tetap dapat diakses.
+
+Persentase distribusi vocabulary untuk setiap level CEFR harus dapat dikonfigurasi sebagai rekomendasi kurikulum, bukan dianggap sebagai aturan persentase resmi CEFR.
+
+Jangan otomatis mengubah jalur pengguna tanpa alasan yang jelas. Perubahan jalur harus berdasarkan aturan yang transparan dan progres tersimpan.
+
+# 5. EXPLORER MAP — SPESIFIKASI VISUAL WAJIB
+
+## 5.1. Tujuan visual
+
+Explorer Map adalah pusat utama pengalaman bermain Word Explorer.
+
+**Gunakan gambar referensi dari pengguna sebagai dasar utama komposisi, tata letak jalur, penempatan level, dan hierarki visual.** Jangan hanya mengambil inspirasi secara umum. Pertahankan karakteristik komposisi yang dapat dikenali dari referensi tersebut, kemudian ubah lingkungan dan objeknya menjadi dunia eksplorasi fantasi.
+
+Jika gambar referensi tersedia, analisis:
+- Bentuk keseluruhan peta.
+- Posisi dan arah jalur.
+- Penempatan simpul level.
+- Posisi persimpangan.
+- Pembagian wilayah.
+- Skala objek.
+- Hubungan antara jalur dan lingkungan.
+- Hierarki visual antara karakter, level, checkpoint, dan landmark.
+
+Jangan mengarang komposisi baru yang bertentangan dengan referensi. Jika suatu detail tidak terlihat jelas pada gambar, pertahankan interpretasi yang paling dekat dengan elemen yang terlihat dan jangan mengklaim detail yang tidak tersedia.
+
+## 5.2. Gaya dan perspektif
+
+Buat sebuah peta dunia petualangan bergaya kartun 3D dengan sudut pandang isometrik, terinspirasi dari peta level dalam game petualangan fantasi.
+
+Karakteristik visual:
+- Perspektif isometrik yang konsisten.
+- Bentuk lingkungan memiliki kedalaman dan volume 3D.
+- Warna cerah, harmonis, dan kaya.
+- Garis luar tegas pada objek penting.
+- Tekstur lingkungan yang detail.
+- Bayangan lembut dan pencahayaan konsisten.
+- Medan memiliki elevasi, tebing, lereng, dan perbedaan ketinggian yang jelas.
+- Dunia tampak luas, menarik, dan mudah dibaca.
+- Setiap wilayah memiliki identitas visual yang berbeda.
+- Semua wilayah tergabung dalam satu dunia yang koheren.
+
+Hasilnya harus terlihat seperti peta dunia game RPG atau platformer petualangan, bukan peta geografis datar, bukan dashboard, dan bukan sekumpulan kartu level yang terpisah.
+
+## 5.3. Karakter utama dan jalur petualangan
+
+Ganti mobil atau kendaraan yang mungkin terdapat pada referensi dengan **seorang petualang kecil** sebagai karakter utama.
+
+Karakter harus memiliki:
+- Pakaian penjelajah.
+- Ransel.
+- Sepatu bot.
+- Perlengkapan eksplorasi yang sesuai.
+- Proporsi kartun 3D yang lucu dan ekspresif.
+- Siluet yang mudah dikenali dari tampilan peta.
+
+Karakter menjadi penanda posisi pemain. Tampilkan karakter pada level aktif atau checkpoint terakhir yang telah dicapai.
+
+Ketika pengguna menyelesaikan level, animasikan karakter berjalan atau berpindah mengikuti jalur menuju level berikutnya yang terbuka. Karakter tidak boleh berpindah secara acak ke posisi yang tidak terhubung oleh jalur.
+
+Pertahankan ciri jalur utama berikut:
+- Jalur berwarna abu-abu.
+- Garis tepi berwarna kuning.
+- Jalur berkelok mengikuti bentuk medan.
+- Persimpangan yang jelas.
+- Lingkaran penanda level berwarna emas.
+- Simbol checkpoint yang mudah dikenali.
+- Jembatan dan jalur penghubung di area yang terpisah oleh sungai atau perairan.
+
+Jalur harus tampak menyatu dengan dunia 3D dan mengikuti kontur wilayah, bukan berupa garis datar yang ditempel di atas gambar.
+
+## 5.4. Wilayah utama dalam peta
+
+Gabungkan semua wilayah berikut dalam satu dunia petualangan yang saling terhubung.
+
+### A. Hutan hijau
+
+Buat hutan lebat dengan:
+- Pepohonan tinggi dan berlapis.
+- Semak-semak dan tanaman merambat.
+- Jamur dengan bentuk dan warna menarik.
+- Batu-batuan dan akar pohon.
+- Cahaya matahari yang menembus dedaunan.
+- Jalan setapak kecil menuju bagian hutan yang lebih dalam.
+- Landmark alami yang mudah dikenali.
+
+Hutan harus terasa hidup, misterius, dan mengundang eksplorasi.
+
+### B. Pulau terpencil
+
+Buat sebuah pulau kecil yang terpisah secara visual dari daratan utama dan dikelilingi air laut biru jernih.
+
+Hiasi pulau dengan:
+- Pantai berpasir.
+- Pohon kelapa.
+- Vegetasi tropis.
+- Bebatuan di tepi pantai.
+- Perairan biru dengan gradasi kedalaman.
+- Elemen misterius yang mengisyaratkan rahasia tersembunyi.
+
+Pulau harus terlihat sebagai wilayah yang berbeda. Jika jalur level melewatinya, sediakan jembatan, dermaga, perahu sebagai elemen lingkungan, atau penghubung lain yang konsisten dengan desain peta. Karakter utama tetap menggunakan penanda petualang, bukan kendaraan.
+
+### C. Reruntuhan Romawi
+
+Tambahkan kawasan reruntuhan arsitektur Romawi kuno dengan:
+- Pilar batu.
+- Lengkungan monumental.
+- Tangga rusak.
+- Kuil kuno.
+- Patung lapuk.
+- Dinding dan lantai batu yang retak.
+- Lumut serta tanaman liar di sela-sela struktur.
+
+Gunakan warna batu krem dan abu-abu, dengan detail pelapukan yang alami. Reruntuhan harus terasa sebagai peradaban kuno yang telah lama ditinggalkan.
+
+### D. Pegunungan
+
+Buat kawasan pegunungan dengan:
+- Puncak tinggi.
+- Tebing berbatu.
+- Jalur pendakian berkelok.
+- Beberapa puncak bersalju.
+- Kabut tipis.
+- Awan di sekitar puncak.
+- Vegetasi yang semakin jarang pada ketinggian.
+- Jalur sempit atau jembatan yang menunjukkan medan menantang.
+
+Gunakan perbedaan ketinggian yang kuat agar pegunungan mudah dibedakan dari wilayah lain.
+
+### E. Gua misterius
+
+Tambahkan pintu masuk gua pada kaki gunung atau di antara tebing.
+
+Elemen lingkungan:
+- Batu besar di sekitar pintu masuk.
+- Akar pohon.
+- Tanaman liar.
+- Bayangan gelap di dalam gua.
+- Cahaya biru atau kristal bercahaya dari dalam gua.
+
+Pintu masuk gua harus terlihat jelas sebagai landmark yang mengundang eksplorasi dan memberikan kesan misterius.
+
+### F. Padang pasir
+
+Buat wilayah pasir berwarna kuning dengan pola heksagonal yang terlihat pada permukaan tanah.
+
+Tambahkan variasi kontur, batu pasir, bukit pasir, dan landmark yang sesuai. Pola heksagonal menjadi ciri visual wilayah ini, bukan pola yang memenuhi seluruh dunia.
+
+### G. Padang rumput
+
+Buat padang rumput hijau yang luas dengan:
+- Hamparan rumput.
+- Gundukan tanah.
+- Bunga liar.
+- Pepohonan yang tersebar.
+- Bukit kecil.
+- Area terbuka yang memperlihatkan jalur utama.
+
+Padang rumput berfungsi sebagai wilayah yang lebih lapang di antara area yang padat atau menantang.
+
+### H. Sungai, air terjun, dan tebing perairan
+
+Tambahkan sungai berkelok yang menghubungkan berbagai wilayah, air terjun di tebing, dan perairan biru yang dikelilingi tebing.
+
+Air harus memiliki gradasi warna, pantulan cahaya, dan kedalaman visual. Tambahkan jembatan kecil di titik penyeberangan yang sesuai dengan jalur petualangan.
+
+## 5.5. Elemen tambahan
+
+Tambahkan elemen pendukung secara selektif:
+- Papan petunjuk.
+- Bendera.
+- Simbol checkpoint.
+- Jembatan kecil.
+- Tangga batu.
+- Gerbang kuno.
+- Landmark alam.
+- Penanda level berbentuk lingkaran emas.
+- Persimpangan jalur.
+- Objek dekoratif yang mendukung cerita dunia.
+
+Jangan memenuhi setiap ruang kosong dengan dekorasi. Prioritaskan keterbacaan jalur dan penanda level.
+
+## 5.6. Komposisi peta
+
+Semua wilayah harus terlihat sebagai bagian dari satu peta dunia yang utuh.
+
+Pastikan:
+- Hutan, pulau, reruntuhan Romawi, pegunungan, gua, padang pasir, padang rumput, sungai, air terjun, dan perairan memiliki identitas masing-masing.
+- Jalur utama menghubungkan wilayah secara logis.
+- Perubahan medan terasa alami.
+- Landmark tidak menutupi simpul level.
+- Simpul level tidak tertutup pepohonan, bangunan, awan, atau efek visual.
+- Jalur tetap mudah dibaca ketika peta diperbesar atau diperkecil.
+- Komposisi peta tetap sesuai referensi utama.
+- Peta terasa kaya dan detail, tetapi tidak berantakan.
+
+Jangan menambahkan label teks berukuran besar di seluruh lingkungan jika hal itu merusak komposisi. Informasi level dapat ditampilkan melalui elemen UI yang terintegrasi dengan peta.
+
+# 6. TIGA PETA TERPISAH
+
+Buat tiga peta yang benar-benar terpisah untuk jalur LOW, MIDDLE, dan HIGH.
+
+Setiap peta memiliki:
+- Identitas jalur sendiri.
+- Progres level sendiri.
+- Status unlock sendiri.
+- Penempatan karakter berdasarkan progres jalur tersebut.
+- Landmark dan lingkungan yang konsisten dengan dunia petualangan.
+- Tema visual dasar yang konsisten dengan Word Explorer.
+
+Gunakan desain dunia yang memiliki bahasa visual sama, tetapi bedakan pengalaman dan area setiap jalur agar siswa mengetahui jalur mana yang sedang mereka mainkan.
+
+Akses peta:
+- LOW: hanya peta LOW.
+- MIDDLE: peta LOW dan MIDDLE.
+- HIGH: peta LOW, MIDDLE, dan HIGH.
+
+Akses ke peta yang lebih rendah tidak menghapus progres sebelumnya.
+
+# 7. STRUKTUR STAGE DAN LEVEL
+
+Setiap jalur memiliki tepat 5 stage. Setiap stage memiliki tepat 10 level.
+
+Format nama level:
+- Stage 1: `1-1` sampai `1-10`.
+- Stage 2: `2-1` sampai `2-10`.
+- Stage 3: `3-1` sampai `3-10`.
+- Stage 4: `4-1` sampai `4-10`.
+- Stage 5: `5-1` sampai `5-10`.
+
+Total:
+- 50 level per jalur.
+- 150 level untuk tiga jalur.
+- 10 soal utama per level.
+- 1.500 soal utama untuk seluruh level.
+
+Setiap stage boleh memiliki nama tematik, misalnya Forest Trail, Lost Island, Ancient Ruins, Mountain Passage, dan Crystal Cave. Nama ini adalah contoh tema, bukan pengganti format ID level.
+
+Stage dan level harus tersusun mengikuti jalur petualangan. Gunakan landmark dan lingkungan untuk membantu membedakan wilayah, tetapi jangan mengorbankan keterbacaan nomor level.
+
+# 8. ATURAN UNLOCK LEVEL DAN STAGE
+
+Level pertama pada stage pertama dibuka sesuai jalur yang diberikan kepada pengguna.
+
+Aturan progres:
+1. Level berikutnya terkunci sampai level sebelumnya selesai.
+2. Level dinyatakan selesai setelah seluruh soal utama dijawab dan seluruh kewajiban remedial selesai.
+3. Stage berikutnya terkunci sampai seluruh 10 level di stage sebelumnya selesai.
+4. Level yang telah selesai dapat dibuka kembali untuk mengulang latihan.
+5. Mengulang level tidak boleh menghapus pencapaian historis atau merusak progres.
+6. Level yang terkunci harus memiliki tampilan terkunci yang jelas.
+7. Jangan mengizinkan pengguna membuka level hanya dengan mengubah tampilan frontend atau memanipulasi permintaan klien.
+
+Gunakan status yang jelas, misalnya:
+- Locked.
+- Available.
+- In Progress.
+- Completed.
+
+Jangan hanya mengandalkan warna untuk menyampaikan status. Gunakan ikon atau label tambahan.
+
+# 9. INTERAKSI EXPLORER MAP
+
+Explorer Map harus berfungsi sebagai antarmuka game yang interaktif.
+
+Fitur:
+- Zoom in dan zoom out.
+- Geser atau pan untuk menjelajahi peta.
+- Pemilihan level yang telah terbuka.
+- Penanda level aktif.
+- Tooltip atau panel ringkas ketika simpul level dipilih.
+- Penanda checkpoint.
+- Animasi perpindahan karakter setelah level selesai.
+- Efek visual ketika level terbuka.
+- Penanda progres stage.
+- Indikator level terkunci.
+- Tombol kembali ke peta atau dashboard.
+- Tampilan yang tetap mudah digunakan pada layar sentuh.
+
+Ketika pengguna memilih level yang terbuka, tampilkan informasi seperti nama level, tema, jumlah vocabulary target, status progres, dan tombol untuk mulai bermain.
+
+Level terkunci tidak boleh memulai kuis. Tampilkan informasi singkat tentang syarat untuk membukanya.
+
+Jangan menggunakan elemen interaktif palsu. Semua tombol, simpul level, dan kontrol peta harus menjalankan fungsi yang sesuai.
+
+# 10. QUIZ LEVEL
+
+Setiap level memiliki tepat 10 soal utama.
+
+Soal harus disesuaikan dengan:
+- Jalur LOW, MIDDLE, atau HIGH.
+- Target CEFR.
+- Kosakata level tersebut.
+- Materi yang telah dipelajari.
+- Format soal yang sesuai.
+
+Variasikan jenis soal, misalnya:
+- Pilihan ganda.
+- Memasangkan kata dengan arti.
+- Memilih gambar yang sesuai.
+- Melengkapi kalimat.
+- Memilih kata yang tepat berdasarkan konteks.
+- Menyusun kata.
+- Memahami kalimat atau bacaan singkat.
+- Mengidentifikasi penggunaan kata yang benar.
+
+Jenis soal harus sesuai kemampuan pengguna. Jangan memberikan soal membaca kompleks kepada pemula jika belum ada materi pendukung.
+
+Tampilkan:
+- Nomor soal.
+- Progres pengerjaan.
+- Instruksi yang jelas.
+- Pilihan jawaban yang mudah dipilih.
+- Umpan balik setelah jawaban.
+- Ringkasan hasil setelah 10 soal utama.
+
+Jawaban dan skor utama harus disimpan secara konsisten.
+
+# 11. ADAPTIVE REMEDIAL
+
+Terapkan sistem remedial adaptif yang menyerupai mekanisme latihan korektif pada platform kuis edukasi.
+
+**Aturan wajib: jumlah remedial awal harus sama dengan jumlah jawaban salah pada percobaan pertama 10 soal utama.**
+
+Contoh:
+- Jika 10/10 benar, tidak ada remedial.
+- Jika 9/10 benar, satu remedial awal.
+- Jika 7/10 benar, tiga remedial awal.
+- Jika 4/10 benar, enam remedial awal.
+- Jika 0/10 benar, sepuluh remedial awal.
+
+Setiap jawaban utama yang salah harus menghasilkan satu kewajiban remedial yang berkaitan dengan konsep, vocabulary, atau keterampilan yang salah tersebut.
+
+Ketentuan:
+1. Simpan daftar kesalahan dari pengumpulan jawaban pertama.
+2. Buat satu remedial awal untuk setiap kesalahan tersebut.
+3. Jangan mengubah jumlah remedial awal berdasarkan jumlah jawaban salah pada remedial.
+4. Jika siswa menjawab remedial dengan salah, berikan umpan balik dan latihan ulang yang sesuai.
+5. Siswa harus menjawab latihan remedial terkait dengan benar sebelum kewajiban tersebut dianggap selesai.
+6. Latihan ulang akibat kesalahan remedial tidak menambah jumlah kewajiban remedial awal.
+7. Skor kuis utama tetap terpisah dari remedial.
+8. Remedial tidak boleh memperbaiki skor percobaan pertama secara retroaktif.
+9. Level tidak boleh dinyatakan selesai sampai semua kewajiban remedial terpenuhi.
+10. Simpan status remedial agar pengguna dapat melanjutkan jika keluar dari aplikasi.
+
+Gunakan pengenal yang menghubungkan setiap remedial dengan soal utama yang salah. Soal remedial dapat menguji keterampilan yang sama menggunakan konteks berbeda, agar siswa memahami materi, bukan sekadar menghafal jawaban.
+
+# 12. SISTEM BINTANG DAN PENCAPAIAN
+
+Gunakan tiga bintang sebagai sistem penilaian level.
+
+Syarat wajib:
+- Tiga bintang sempurna hanya diberikan jika siswa mendapatkan 10/10 pada percobaan pertama kuis utama.
+- Jawaban remedial tidak boleh mengubah skor utama atau menghasilkan tiga bintang sempurna secara retroaktif.
+- Level tetap dapat diselesaikan setelah remedial, meskipun skor utama tidak sempurna.
+- Tampilkan hasil utama dan progres remedial secara terpisah.
+
+Tentukan aturan satu dan dua bintang secara eksplisit dan konsisten. Simpan skor terbaik dan riwayat percobaan secara terpisah jika diperlukan.
+
+Jangan memberikan bintang hanya karena siswa telah menekan tombol selesai.
+
+# 13. VOCABULARY DATABASE
+
+Rancang struktur data yang mampu mendukung target kapasitas hingga 170.000 entri vocabulary.
+
+Target kapasitas bukan berarti 170.000 kata sudah tersedia. Jangan membuat klaim jumlah entri terisi jika data sebenarnya belum tersedia.
+
+Setiap entri vocabulary idealnya memiliki:
+- ID unik.
+- Kata bahasa Inggris.
+- Arti bahasa Indonesia.
+- Definisi bahasa Inggris sederhana.
+- Kelas kata.
+- Pelafalan atau IPA jika datanya tersedia.
+- Contoh kalimat.
+- Terjemahan contoh kalimat.
+- Level CEFR.
+- Topik atau kategori.
+- Tingkat kesulitan.
+- Tag penggunaan.
+- Sumber atau asal data jika relevan.
+
+Gunakan relasi data yang konsisten untuk menghubungkan vocabulary dengan jalur, stage, level, soal, remedial, dan progres siswa.
+
+Sediakan mekanisme pencarian, filter, pagination, serta pemuatan data yang efisien.
+
+Jangan memuat seluruh 170.000 entri ke browser sekaligus. Gunakan query, pagination, indexing, dan caching yang sesuai.
+
+Jangan mengisi database dengan kata acak, definisi palsu, atau entri duplikat hanya untuk mencapai angka target. Jika konten awal masih berupa sampel, tampilkan jumlah data yang benar-benar tersedia dan buat struktur yang siap diperluas.
+
+# 14. DAILY VOCABULARY DAN KEBIASAAN BELAJAR
+
+Tetapkan target vocabulary baru harian berdasarkan jalur:
+- LOW: 10 kata.
+- MIDDLE: 15–20 kata.
+- HIGH: 25–30 kata.
+
+Target tersebut merupakan konfigurasi awal yang dapat diatur.
+
+Sediakan:
+- Daftar vocabulary harian.
+- Penanda kata baru dan kata yang telah dipelajari.
+- Latihan singkat.
+- Pengulangan kosakata.
+- Progres target harian.
+- Ringkasan sesi belajar.
+
+Hindari menghitung satu kata yang sama berulang kali sebagai vocabulary baru jika sebenarnya kata tersebut sudah dihitung sebelumnya.
+
+# 15. DAILY STREAK DAN REWARD HEWAN
+
+Buat sistem streak untuk mendorong konsistensi belajar.
+
+Syarat streak:
+- Hari dinyatakan memenuhi syarat jika pengguna menyelesaikan target sesi harian yang ditentukan dan menyelesaikan latihan yang diwajibkan untuk sesi tersebut.
+- Login saja tidak dihitung sebagai aktivitas belajar yang memenuhi syarat.
+- Sesi yang belum selesai tidak boleh otomatis dihitung sebagai streak.
+- Gunakan tanggal dan zona waktu pengguna secara konsisten.
+- Simpan streak saat ini dan streak terbaik.
+
+Reward:
+- 7 hari berturut-turut memenuhi syarat: buka satu reward hewan.
+- 30 hari berturut-turut memenuhi syarat: buka reward hewan langka atau mitologis.
+- Reward yang sudah diperoleh harus tetap tersimpan walaupun streak berikutnya terputus.
+
+Tampilkan koleksi hewan, status terkunci dan terbuka, animasi pembukaan reward, serta informasi syarat pencapaiannya.
+
+Jangan membuka reward tanpa memenuhi syarat. Jangan menghapus reward historis ketika streak terputus.
+
+# 16. ADVENTURE STORIES
+
+Sediakan cerita petualangan orisinal yang terhubung dengan wilayah di Explorer Map.
+
+Gunakan tema seperti:
+- Menjelajahi hutan misterius.
+- Menemukan pulau tersembunyi.
+- Mengungkap rahasia reruntuhan kuno.
+- Mendaki gunung bersalju.
+- Menjelajahi gua kristal.
+- Menemukan artefak atau harta karun.
+
+Cerita harus mendukung pembelajaran vocabulary, bukan hanya menjadi dekorasi.
+
+Setiap cerita dapat memiliki:
+- Judul.
+- Tingkat kesulitan.
+- Target vocabulary.
+- Teks cerita.
+- Ilustrasi pendukung.
+- Pertanyaan pemahaman.
+- Aktivitas vocabulary.
+- Hadiah atau progres cerita.
+
+Gunakan inspirasi umum dari genre petualangan fantasi dan perjalanan emosional, tetapi ciptakan karakter, alur, dialog, dunia, dan ilustrasi orisinal. Jangan menyalin karakter, dialog, desain, atau alur cerita dari film atau karya berhak cipta tertentu.
+
+# 17. DASHBOARD PENGGUNA
+
+Dashboard harus memperlihatkan informasi yang berguna tanpa menggantikan Explorer Map sebagai pusat permainan.
+
+Tampilkan:
+- Nama atau avatar pengguna.
+- Jalur pembelajaran.
+- Target vocabulary hari ini.
+- Progres harian.
+- Streak.
+- Reward hewan.
+- Level terakhir yang dimainkan.
+- Stage yang sedang dikerjakan.
+- Tombol Continue Adventure.
+- Ringkasan hasil belajar.
+
+Tombol Continue Adventure harus membawa pengguna ke level atau aktivitas yang relevan berdasarkan progres tersimpan.
+
+Gunakan desain yang konsisten dengan dunia petualangan.
+
+# 18. STRUKTUR DATA DAN BACKEND
+
+Rancang model data yang mencakup setidaknya:
+- Users.
+- UserProfiles.
+- OnboardingResponses.
+- DiagnosticAttempts.
+- LearningPaths.
+- Stages.
+- Levels.
+- Vocabulary.
+- Questions.
+- QuestionOptions.
+- QuizAttempts.
+- UserAnswers.
+- RemedialRequirements.
+- RemedialAttempts.
+- LevelProgress.
+- StageProgress.
+- VocabularyProgress.
+- DailyGoals.
+- DailySessions.
+- Streaks.
+- Rewards.
+- UserRewards.
+- AdventureStories.
+- StoryProgress.
+
+Gunakan foreign key atau relasi yang sesuai, validasi data, dan batasan unik agar progres tidak terduplikasi.
+
+Pastikan aturan unlock, penilaian, remedial, reward, dan penyimpanan progres divalidasi pada sisi server. Jangan mempercayai skor, status level, atau reward hanya karena dikirim dari frontend.
+
+Gunakan transaksi atau mekanisme konsistensi data ketika menyelesaikan level, membuka stage, dan memberikan reward.
+
+# 19. KEAMANAN, AKSESIBILITAS, DAN PERFORMA
+
+Terapkan:
+- Autentikasi dan otorisasi yang benar.
+- Validasi input.
+- Proteksi terhadap akses data pengguna lain.
+- Pengelolaan sesi yang aman.
+- Penanganan kesalahan yang informatif.
+- Loading state dan empty state.
+- Pencegahan pengiriman jawaban ganda yang tidak disengaja.
+- Penyimpanan progres yang andal.
+- Navigasi keyboard bila relevan.
+- Kontras teks yang memadai.
+- Label yang dapat dibaca screen reader untuk kontrol penting.
+- Tata letak responsif.
+- Pengoptimalan aset visual peta.
+
+Gunakan lazy loading untuk aset peta dan gambar yang besar. Jika peta perlu menampilkan banyak objek, gunakan teknik rendering yang sesuai agar tetap responsif.
+
+Jangan mengorbankan fungsi zoom, pan, pemilihan level, atau keterbacaan penanda demi detail dekoratif yang berlebihan.
+
+# 20. ARSITEKTUR IMPLEMENTASI
+
+Bangun aplikasi dengan arsitektur yang sesuai untuk produk nyata.
+
+Pisahkan:
+- Antarmuka pengguna.
+- Komponen Explorer Map.
+- Logika progres dan unlock.
+- Mesin kuis.
+- Logika remedial.
+- Sistem reward.
+- Pengelolaan vocabulary.
+- Autentikasi.
+- Penyimpanan data.
+- API atau layanan backend.
+
+Gunakan komponen yang dapat dipakai kembali, skema data yang tervalidasi, dan konfigurasi yang mudah diperbarui.
+
+Jangan membuat seluruh aplikasi sebagai satu halaman statis dengan tombol dekoratif.
+
+Jangan mengklaim autentikasi, database, penyimpanan progres, atau fitur lain sudah terhubung jika implementasinya belum benar-benar berfungsi.
+
+Jika layanan eksternal memerlukan kredensial, konfigurasi, atau koneksi yang belum tersedia, jelaskan dengan jelas bagian mana yang perlu dikonfigurasi.
+
+# 21. URUTAN IMPLEMENTASI
+
+Kerjakan dalam tahap yang terstruktur:
+
+**Tahap 1 — Fondasi**
+- Struktur aplikasi.
+- Sistem autentikasi.
+- Profil pengguna.
+- Kuesioner dan diagnostic test.
+- Model data utama.
+
+**Tahap 2 — Explorer Map**
+- Implementasi visual sesuai gambar referensi.
+- Perspektif isometrik.
+- Karakter penjelajah.
+- Jalur abu-abu dengan tepi kuning.
+- Penanda level emas.
+- Landmark dan seluruh wilayah.
+- Zoom, pan, dan interaksi level.
+
+**Tahap 3 — Sistem pembelajaran**
+- Tiga jalur LOW, MIDDLE, HIGH.
+- Lima stage dan sepuluh level per stage.
+- Bank soal dan vocabulary.
+- Kuis utama.
+- Unlock level dan stage.
+
+**Tahap 4 — Adaptivitas**
+- Deteksi jawaban salah.
+- Pembuatan kewajiban remedial.
+- Latihan ulang.
+- Penyelesaian level dan sistem bintang.
+
+**Tahap 5 — Retensi**
+- Target vocabulary harian.
+- Streak.
+- Reward hewan.
+- Cerita petualangan.
+- Ringkasan progres.
+
+**Tahap 6 — Pengujian dan penyempurnaan**
+- Pengujian aturan permainan.
+- Pengujian autentikasi.
+- Pengujian penyimpanan progres.
+- Pengujian responsivitas.
+- Pemeriksaan visual Explorer Map terhadap referensi.
+
+Jangan berhenti pada tahap visual jika fitur inti belum berfungsi. Setiap tahap harus memiliki implementasi yang dapat diuji.
+
+# 22. ACCEPTANCE TESTS — KRITERIA KEBERHASILAN
+
+Aplikasi hanya dinyatakan memenuhi spesifikasi jika pengujian berikut berhasil.
+
+## A. Explorer Map
+- Peta menggunakan perspektif isometrik kartun 3D.
+- Komposisi dan tata letak jalur mengikuti gambar referensi pengguna.
+- Karakter utama adalah petualang kecil, bukan mobil.
+- Jalur berwarna abu-abu dengan tepi kuning.
+- Penanda level berbentuk lingkaran emas.
+- Checkpoint terlihat jelas.
+- Hutan, pulau, reruntuhan Romawi, pegunungan, gua, padang pasir, padang rumput, sungai, air terjun, dan perairan terintegrasi dalam satu dunia.
+- Peta mendukung zoom, pan, dan pemilihan level.
+- Karakter berpindah melalui jalur yang benar setelah level selesai.
+- Dekorasi tidak menutupi level atau menghambat navigasi.
+- Tampilan tetap terbaca di desktop dan ponsel.
+
+## B. Struktur level
+- Setiap jalur memiliki tepat 5 stage.
+- Setiap stage memiliki tepat 10 level.
+- Totalnya 50 level per jalur dan 150 level keseluruhan.
+- Setiap level memiliki tepat 10 soal utama.
+- Totalnya 1.500 soal utama untuk seluruh aplikasi.
+- Stage berikutnya tidak terbuka sebelum seluruh 10 level stage sebelumnya selesai.
+- Level terkunci tidak dapat dimainkan.
+
+## C. Kuis dan remedial
+- Skor utama dihitung dari 10 soal utama.
+- Satu kesalahan pada percobaan pertama menghasilkan satu kewajiban remedial awal.
+- Lima kesalahan menghasilkan lima kewajiban remedial awal.
+- Kesalahan pada remedial memicu latihan ulang tanpa menambah jumlah kewajiban awal.
+- Level tidak selesai sebelum seluruh remedial yang diwajibkan terselesaikan.
+- Remedial tidak mengubah skor utama.
+- Tiga bintang sempurna hanya diberikan untuk hasil 10/10 pada percobaan pertama.
+
+## D. Akun dan progres
+- Pengguna baru melewati onboarding dan diagnostic test.
+- Pengguna lama dapat melanjutkan progres.
+- Data setiap pengguna terpisah.
+- Progres bertahan setelah logout dan login kembali.
+- Reward yang telah diperoleh tidak hilang ketika streak terputus.
+- Data yang belum tersedia tidak ditampilkan sebagai data nyata.
+
+## E. Data vocabulary
+- Struktur database siap mendukung target kapasitas 170.000 entri.
+- Jumlah entri aktual ditampilkan secara jujur.
+- Pencarian dan pagination berfungsi.
+- Tidak ada klaim bahwa database telah berisi 170.000 kata jika belum demikian.
+
+# 23. INSTRUKSI AKHIR UNTUK AI PEMBUAT APLIKASI
+
+Buat Word Explorer sebagai produk edukasi yang berfungsi, konsisten, dan siap dikembangkan.
+
+**Explorer Map adalah prioritas visual tertinggi.** Gunakan gambar referensi sebagai dasar komposisi, tata letak jalur, dan posisi level. Integrasikan seluruh spesifikasi dunia petualangan di atas ke dalam desain yang sama. Jangan mengganti referensi dengan peta generik, daftar level, kumpulan kartu, atau dashboard yang tidak menyerupai konsep yang diminta.
+
+Jaga agar desain visual, aturan belajar, sistem progres, dan backend saling terhubung.
+
+Sebelum menyatakan pekerjaan selesai:
+1. Jalankan aplikasi.
+2. Uji alur pengguna baru dan pengguna lama.
+3. Uji perpindahan karakter pada peta.
+4. Uji unlock level dan stage.
+5. Uji kuis dan remedial dengan beberapa skenario.
+6. Uji penyimpanan progres.
+7. Periksa Explorer Map secara visual terhadap gambar referensi.
+8. Perbaiki perbedaan visual yang jelas.
+9. Jelaskan fitur yang benar-benar berfungsi dan konfigurasi yang masih diperlukan.
+
+Hasil akhir harus terasa seperti game petualangan edukatif yang utuh: siswa menjelajahi dunia, mempelajari vocabulary, menyelesaikan level, memperbaiki kesalahan, membuka wilayah baru, membaca cerita, dan mendapatkan reward melalui progres belajar yang nyata.

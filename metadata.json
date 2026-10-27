@@ -1,0 +1,6 @@
+{
+  "name": "Word Explorer",
+  "description": "Educational English vocabulary adventure game for junior high students with isometric world map, adaptive remedial quizzes, and reward system",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
