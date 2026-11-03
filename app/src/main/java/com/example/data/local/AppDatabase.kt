@@ -8,13 +8,16 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [
         UserEntity::class,
+        UserSessionEntity::class,
         UserProfileEntity::class,
         LevelProgressEntity::class,
+        DailyLevelCompletionEntity::class,
+        DailyVocabAssignmentEntity::class,
         RemedialEntity::class,
         VocabularyEntity::class,
         StoryProgressEntity::class
     ],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

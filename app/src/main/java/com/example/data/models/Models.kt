@@ -50,10 +50,11 @@ enum class LevelStatus {
 
 enum class QuestionType {
     MULTIPLE_CHOICE,
-    WORD_MATCHING,
+    DRAG_AND_MATCH,
     FILL_BLANK,
     WORD_UNSCRAMBLE,
-    CONTEXT_CHOICE
+    IMAGE_VOCABULARY,
+    SENTENCE_COMPLETION
 }
 
 data class Question(
@@ -61,10 +62,14 @@ data class Question(
     val type: QuestionType,
     val prompt: String,
     val subText: String? = null,
-    val options: List<String>,
+    val options: List<String> = emptyList(),
     val correctAnswer: String,
     val explanation: String,
-    val targetWord: String
+    val targetWord: String,
+    val matchingPairs: Map<String, String>? = null, // For Drag and Match: English -> Indonesian
+    val iconEmoji: String? = null,                 // For Image-based vocabulary
+    val scrambledLetters: List<String>? = null,     // For Word Arrangement
+    val sentenceWithBlank: String? = null           // Contextual sentence
 )
 
 data class LevelInfo(
@@ -86,6 +91,19 @@ data class StageInfo(
     val name: String,
     val regionTheme: String,
     val description: String,
+    val colorHex: String
+)
+
+data class ExplorationRegion(
+    val stageNumber: Int,
+    val name: String,
+    val subtitle: String,
+    val description: String,
+    val pixelX: Float,
+    val pixelY: Float,
+    val bannerX: Float,
+    val bannerY: Float,
+    val iconEmoji: String,
     val colorHex: String
 )
 

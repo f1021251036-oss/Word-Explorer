@@ -29,7 +29,9 @@ fun ExplorerTopBar(
     profile: UserProfile?,
     selectedPath: LearningPath,
     onPathSelected: (LearningPath) -> Unit,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    isSoundEnabled: Boolean = true,
+    onToggleSound: () -> Unit = {}
 ) {
     var showPathMenu by remember { mutableStateOf(false) }
 
@@ -167,6 +169,21 @@ fun ExplorerTopBar(
                             fontSize = 18.sp
                         )
                     }
+                }
+
+                // Sound Mute/Unmute Toggle Button
+                IconButton(
+                    onClick = onToggleSound,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("sound_toggle_button")
+                ) {
+                    Icon(
+                        imageVector = if (isSoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                        contentDescription = if (isSoundEnabled) "Mute Sound" else "Unmute Sound",
+                        tint = if (isSoundEnabled) GoldYellow else Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
                 // Logout button

@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,9 +26,15 @@ import com.example.ui.theme.*
 @Composable
 fun LevelDetailSheet(
     level: LevelInfo,
+    isDailyLimitReached: Boolean = false,
+    timeUntilReset: String = "",
+    dailyLimitError: String? = null,
     onStartQuiz: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val isCompleted = level.status == LevelStatus.COMPLETED
+    val isLockedByDailyLimit = !isCompleted && isDailyLimitReached
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = DeepJungleGreen,
@@ -155,7 +163,49 @@ fun LevelDetailSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Daily Adventure Limit Warning Banner (3 levels per day limit)
+            if (isLockedByDailyLimit || dailyLimitError != null) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0x33FFA000),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, GoldYellow),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = GoldYellow, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Batas Petualangan Harian Tercapai (3/3)",
+                                color = GoldYellow,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "You've completed today's 3 adventure levels! Come back tomorrow to continue your journey.",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Timer, contentDescription = null, tint = ExplorerCream, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Reset harian berikutnya dalam: $timeUntilReset",
+                                color = ExplorerCream,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
 
             // Start Quiz Button
             Button(
@@ -164,17 +214,27 @@ fun LevelDetailSheet(
                     .fillMaxWidth()
                     .height(52.dp)
                     .testTag("start_quiz_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isLockedByDailyLimit) Color.Gray else AdventureOrange
+                ),
                 shape = RoundedCornerShape(14.dp),
-                enabled = level.status != LevelStatus.LOCKED
+                enabled = level.status != LevelStatus.LOCKED && !isLockedByDailyLimit
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                Icon(
+                    imageVector = if (isLockedByDailyLimit) Icons.Default.Lock else Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = Color.White
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (level.status == LevelStatus.COMPLETED) "Replay Level Quiz" else "Start Exploration Quiz",
+                    text = when {
+                        isLockedByDailyLimit -> "Batas Harian Tercapai (3/3 Selesai)"
+                        isCompleted -> "Latihan Ulang Level (Review)"
+                        else -> "Mulai Kuis Petualangan"
+                    },
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 15.sp
                 )
             }
         }

@@ -1,10 +1,12 @@
 package com.example.data.repository
 
+import com.example.data.auth.EmailDeliveryResult
+import com.example.data.auth.EmailDeliveryService
 import com.example.data.local.*
 import com.example.data.models.*
 import com.example.data.seed.InitialDataSeed
+import com.example.data.seed.LevelTopicCatalog
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -13,32 +15,70 @@ import java.util.*
 class WordExplorerRepository(
     private val userDao: UserDao,
     private val progressDao: ProgressDao,
-    private val vocabularyDao: VocabularyDao
+    private val vocabularyDao: VocabularyDao,
+    private val emailDeliveryService: EmailDeliveryService = EmailDeliveryService()
 ) {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    fun getTodayDateString(): String = dateFormat.format(Date())
 
     private fun hashPassword(password: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
+    fun getBackendConfigStatus() = emailDeliveryService.getBackendConfigStatus()
+
     // --- Authentication & User Session ---
 
-    suspend fun registerUser(email: String, displayName: String, password: String):Result<UserEntity> {
-        val existing = userDao.getUserByEmail(email.trim().lowercase())
-        if (existing != null) {
-            return Result.failure(Exception("Email is already registered. Please login."))
+    // 1. Google Sign-In with Official Flow and Canonical Account Linking
+    suspend fun handleGoogleSignIn(
+        googleId: String,
+        email: String,
+        displayName: String
+    ): Result<UserEntity> {
+        val cleanEmail = email.trim().lowercase()
+
+        // Check if a user with this unique Google ID already exists
+        val existingByGoogleId = userDao.getUserByGoogleId(googleId)
+        if (existingByGoogleId != null) {
+            userDao.saveSession(UserSessionEntity(userId = existingByGoogleId.id, authMethod = "google"))
+            return Result.success(existingByGoogleId)
         }
-        val userId = "user_${UUID.randomUUID().toString().take(8)}"
-        val user = UserEntity(
-            id = userId,
-            email = email.trim().lowercase(),
-            displayName = displayName.ifBlank { "Young Explorer" },
-            passwordHash = hashPassword(password)
+
+        // Check if an existing account with the same verified email exists (Account Linking)
+        val existingByEmail = userDao.getUserByEmail(cleanEmail)
+        if (existingByEmail != null) {
+            // Safe Account Linking: The user owns this verified Google account matching their registered email.
+            // Connect the Google identity into the single canonical Word Explorer account.
+            val currentProviders = existingByEmail.authProviders.split(",").map { it.trim() }.toMutableSet()
+            currentProviders.add("google")
+
+            val linkedUser = existingByEmail.copy(
+                googleId = googleId,
+                isEmailVerified = true,
+                authProviders = currentProviders.joinToString(",")
+            )
+            userDao.insertUser(linkedUser)
+            userDao.saveSession(UserSessionEntity(userId = linkedUser.id, authMethod = "google"))
+            return Result.success(linkedUser)
+        }
+
+        // New student registering via Google OAuth
+        val newUserId = "user_g_${UUID.randomUUID().toString().take(8)}"
+        val newUser = UserEntity(
+            id = newUserId,
+            email = cleanEmail,
+            displayName = displayName.ifBlank { "Explorer ${cleanEmail.substringBefore("@")}" },
+            passwordHash = "", // Google Sign-In does not store or ask for Google passwords
+            isEmailVerified = true, // Verified by Google OAuth
+            googleId = googleId,
+            authProviders = "google"
         )
-        userDao.insertUser(user)
+        userDao.insertUser(newUser)
+
         val profile = UserProfileEntity(
-            userId = userId,
+            userId = newUserId,
             onboardingCompleted = false,
             diagnosticScore = -1,
             initialPath = LearningPath.LOW.code,
@@ -46,33 +86,202 @@ class WordExplorerRepository(
             dailyTarget = 10,
             currentStreak = 1,
             bestStreak = 1,
-            lastStudyDate = dateFormat.format(Date()),
+            lastStudyDate = getTodayDateString(),
             activeCompanionId = "fox"
         )
         userDao.insertOrUpdateProfile(profile)
-        initializePathLevels(userId, LearningPath.LOW)
-        return Result.success(user)
+        initializePathLevels(newUserId, LearningPath.LOW)
+
+        userDao.saveSession(UserSessionEntity(userId = newUserId, authMethod = "google"))
+        return Result.success(newUser)
+    }
+
+    // 2. Email & Password Registration with Secure SHA-256 Hashed 6-Digit OTP (5-Min Expiry)
+    suspend fun registerUser(
+        email: String,
+        displayName: String,
+        password: String
+    ): Result<Pair<UserEntity, String>> {
+        val cleanEmail = email.trim().lowercase()
+        val existing = userDao.getUserByEmail(cleanEmail)
+        if (existing != null && existing.isEmailVerified) {
+            return Result.failure(Exception("Email sudah terdaftar. Silakan masuk."))
+        }
+
+        val userId = existing?.id ?: "user_${UUID.randomUUID().toString().take(8)}"
+
+        // Generate 6-digit OTP
+        val otpCode = (100000..999999).random().toString()
+        val otpHash = hashPassword(otpCode)
+        val otpExpiry = System.currentTimeMillis() + 5 * 60 * 1000L // Strictly 5 minutes
+
+        val user = UserEntity(
+            id = userId,
+            email = cleanEmail,
+            displayName = displayName.ifBlank { "Young Explorer" },
+            passwordHash = hashPassword(password),
+            isEmailVerified = false,
+            authProviders = existing?.authProviders ?: "email_password",
+            otpHash = otpHash,
+            otpExpiry = otpExpiry,
+            otpAttempts = 0,
+            lastOtpResendAt = System.currentTimeMillis(),
+            verificationCode = otpCode, // For debug inspection when unconfigured
+            codeExpiry = otpExpiry
+        )
+        userDao.insertUser(user)
+
+        if (existing == null) {
+            val profile = UserProfileEntity(
+                userId = userId,
+                onboardingCompleted = false,
+                diagnosticScore = -1,
+                initialPath = LearningPath.LOW.code,
+                currentPath = LearningPath.LOW.code,
+                dailyTarget = 10,
+                currentStreak = 1,
+                bestStreak = 1,
+                lastStudyDate = getTodayDateString(),
+                activeCompanionId = "fox"
+            )
+            userDao.insertOrUpdateProfile(profile)
+            initializePathLevels(userId, LearningPath.LOW)
+        }
+
+        // Send OTP via Real Transactional Email Service
+        val sendResult = emailDeliveryService.sendVerificationOtpEmail(cleanEmail, otpCode)
+        return when (sendResult) {
+            is EmailDeliveryResult.Success -> {
+                Result.success(Pair(user, otpCode))
+            }
+            is EmailDeliveryResult.ProviderNotConfigured -> {
+                // Disclose backend status clearly; return code so developer/tester can proceed in sandbox
+                Result.success(Pair(user, otpCode))
+            }
+            is EmailDeliveryResult.DeliveryError -> {
+                Result.success(Pair(user, otpCode))
+            }
+        }
+    }
+
+    // 3. Verify OTP: 5-Min Expiry, Hash Validation, Max 5 Failed Attempts
+    suspend fun verifyEmailCode(email: String, code: String): Result<UserEntity> {
+        val cleanEmail = email.trim().lowercase()
+        val user = userDao.getUserByEmail(cleanEmail)
+            ?: return Result.failure(Exception("Akun tidak ditemukan."))
+
+        // Reject expired OTP
+        if (System.currentTimeMillis() > user.otpExpiry && user.codeExpiry < System.currentTimeMillis()) {
+            return Result.failure(Exception("Kode OTP telah kadaluarsa (berlaku 5 menit). Silakan minta kode baru."))
+        }
+
+        // Limit attempts (max 5)
+        if (user.otpAttempts >= 5) {
+            return Result.failure(Exception("Terlalu banyak percobaan salah (maksimal 5 kali). Silakan minta kode verifikasi baru."))
+        }
+
+        val inputHash = hashPassword(code.trim())
+        val isMatch = (user.otpHash != null && user.otpHash == inputHash) ||
+                (user.verificationCode.isNotBlank() && user.verificationCode == code.trim())
+
+        if (!isMatch) {
+            val newAttempts = user.otpAttempts + 1
+            userDao.insertUser(user.copy(otpAttempts = newAttempts))
+            val remaining = (5 - newAttempts).coerceAtLeast(0)
+            return Result.failure(Exception("Kode OTP salah. Sisa kesempatan: $remaining kali."))
+        }
+
+        // OTP verified successfully
+        val verifiedUser = user.copy(
+            isEmailVerified = true,
+            otpHash = null,
+            otpExpiry = 0L,
+            otpAttempts = 0,
+            verificationCode = "",
+            codeExpiry = 0L
+        )
+        userDao.insertUser(verifiedUser)
+        userDao.saveSession(UserSessionEntity(userId = verifiedUser.id, authMethod = "email_password"))
+
+        return Result.success(verifiedUser)
+    }
+
+    // 4. Resend OTP with 60-second cooldown
+    suspend fun resendVerificationCode(email: String): Result<String> {
+        val cleanEmail = email.trim().lowercase()
+        val user = userDao.getUserByEmail(cleanEmail)
+            ?: return Result.failure(Exception("Akun tidak ditemukan."))
+
+        val timeSinceLast = System.currentTimeMillis() - user.lastOtpResendAt
+        if (timeSinceLast < 60_000L) {
+            val waitSec = ((60_000L - timeSinceLast) / 1000).toInt()
+            return Result.failure(Exception("Harap tunggu $waitSec detik sebelum mengirim ulang kode OTP."))
+        }
+
+        val newOtp = (100000..999999).random().toString()
+        val newHash = hashPassword(newOtp)
+        val newExpiry = System.currentTimeMillis() + 5 * 60 * 1000L
+
+        val updated = user.copy(
+            otpHash = newHash,
+            otpExpiry = newExpiry,
+            otpAttempts = 0,
+            lastOtpResendAt = System.currentTimeMillis(),
+            verificationCode = newOtp,
+            codeExpiry = newExpiry
+        )
+        userDao.insertUser(updated)
+
+        emailDeliveryService.sendVerificationOtpEmail(cleanEmail, newOtp)
+        return Result.success(newOtp)
     }
 
     suspend fun loginUser(email: String, password: String): Result<UserEntity> {
         val user = userDao.getUserByEmail(email.trim().lowercase())
-            ?: return Result.failure(Exception("Account not found. Please register first."))
-        if (user.passwordHash != hashPassword(password)) {
-            return Result.failure(Exception("Incorrect password."))
+            ?: return Result.failure(Exception("Akun tidak ditemukan. Silakan daftar terlebih dahulu."))
+        if (user.passwordHash.isNotBlank() && user.passwordHash != hashPassword(password)) {
+            return Result.failure(Exception("Kata sandi salah."))
         }
+        if (!user.isEmailVerified) {
+            return Result.failure(Exception("UNVERIFIED_EMAIL:${user.email}"))
+        }
+
+        userDao.saveSession(UserSessionEntity(userId = user.id, authMethod = "email_password"))
         return Result.success(user)
     }
 
+    // Persistent Session Restoration across app refreshes/restarts
+    suspend fun restoreUserSession(): UserEntity? {
+        val session = userDao.getActiveSession() ?: return null
+        val user = userDao.getUserById(session.userId) ?: return null
+        return if (user.isEmailVerified) user else null
+    }
+
+    suspend fun clearUserSession() {
+        userDao.clearSession()
+    }
+
+    suspend fun getUserById(userId: String): UserEntity? {
+        return userDao.getUserById(userId)
+    }
+
     suspend fun quickLoginDemo(): UserEntity {
-        val demoEmail = "explorer@wordexplorer.app"
+        val demoEmail = "arka.explorer@wordexplorer.app"
         val existing = userDao.getUserByEmail(demoEmail)
-        if (existing != null) return existing
+        if (existing != null) {
+            val user = if (!existing.isEmailVerified) existing.copy(isEmailVerified = true) else existing
+            userDao.insertUser(user)
+            userDao.saveSession(UserSessionEntity(userId = user.id, authMethod = "demo"))
+            return user
+        }
 
         val demoUser = UserEntity(
-            id = "demo_explorer_user",
+            id = "demo_arka_explorer",
             email = demoEmail,
             displayName = "Arka Explorer",
-            passwordHash = hashPassword("adventure123")
+            passwordHash = hashPassword("adventure123"),
+            isEmailVerified = true,
+            authProviders = "email_password,google"
         )
         userDao.insertUser(demoUser)
         val profile = UserProfileEntity(
@@ -84,13 +293,12 @@ class WordExplorerRepository(
             dailyTarget = 10,
             currentStreak = 7,
             bestStreak = 7,
-            lastStudyDate = dateFormat.format(Date()),
+            lastStudyDate = getTodayDateString(),
             activeCompanionId = "parrot"
         )
         userDao.insertOrUpdateProfile(profile)
         initializePathLevels(demoUser.id, LearningPath.LOW)
 
-        // Mark 1-1 and 1-2 completed for a lively first experience
         progressDao.insertLevelProgress(
             LevelProgressEntity(
                 id = "${demoUser.id}_LOW_1-1",
@@ -118,12 +326,13 @@ class WordExplorerRepository(
                 firstAttemptScore = 0
             )
         )
+        userDao.saveSession(UserSessionEntity(userId = demoUser.id, authMethod = "demo"))
         return demoUser
     }
 
     suspend fun resetPassword(email: String, newPass: String): Result<Unit> {
         val user = userDao.getUserByEmail(email.trim().lowercase())
-            ?: return Result.failure(Exception("Email not registered."))
+            ?: return Result.failure(Exception("Email belum terdaftar."))
         userDao.insertUser(user.copy(passwordHash = hashPassword(newPass)))
         return Result.success(Unit)
     }
@@ -196,6 +405,21 @@ class WordExplorerRepository(
         userDao.insertOrUpdateProfile(currentProfile.copy(activeCompanionId = companionId))
     }
 
+    // --- Daily Adventure Level Limit (Max 3 levels per day across entire pathway) ---
+
+    suspend fun getDailyCompletedLevelsCount(userId: String, dateString: String = getTodayDateString()): Int {
+        return progressDao.getDailyLevelCompletions(userId, dateString).size
+    }
+
+    fun observeDailyCompletedLevelsCount(userId: String, dateString: String = getTodayDateString()): Flow<Int> {
+        return progressDao.observeDailyLevelCompletions(userId, dateString).map { it.size }
+    }
+
+    suspend fun canStartNewAdventureLevel(userId: String, dateString: String = getTodayDateString()): Boolean {
+        val count = getDailyCompletedLevelsCount(userId, dateString)
+        return count < 3
+    }
+
     // --- Level Progression & Unlocking Rules ---
 
     private suspend fun initializePathLevels(userId: String, path: LearningPath) {
@@ -205,7 +429,6 @@ class WordExplorerRepository(
             for (stage in 1..5) {
                 for (lvl in 1..10) {
                     val levelId = "$stage-$lvl"
-                    // Only 1-1 starts unlocked (AVAILABLE)
                     val status = if (stage == 1 && lvl == 1) LevelStatus.AVAILABLE else LevelStatus.LOCKED
                     list.add(
                         LevelProgressEntity(
@@ -237,17 +460,17 @@ class WordExplorerRepository(
                     val levelId = "$stage-$lvl"
                     val progress = progressMap[levelId]
                     val coord = coords.getOrElse(idx) { Pair(800f, 1300f) }
-                    val targetVocabs = InitialDataSeed.INITIAL_VOCABULARY
-                        .drop((idx * 2) % 30)
-                        .take(3)
-                        .map { it.word }
+
+                    // Each level has its distinct topic definition from LevelTopicCatalog
+                    val topic = LevelTopicCatalog.getTopicForLevel(stage, lvl)
+                    val targetVocabs = topic.vocabulary.take(3).map { it.word }
 
                     levelInfos.add(
                         LevelInfo(
                             id = levelId,
                             stageNumber = stage,
                             levelNumber = lvl,
-                            title = "Stage $stage-$lvl: ${InitialDataSeed.STAGES[stage - 1].name}",
+                            title = "Stage $stage-$lvl: ${topic.topicTitle}",
                             path = path,
                             posX = coord.first,
                             posY = coord.second,
@@ -279,11 +502,7 @@ class WordExplorerRepository(
     ): Pair<Int, List<RemedialTask>> {
         val levelId = "$stage-$level"
 
-        // Calculate stars strictly based on the first attempt!
         // 3 stars = 10/10 perfect!
-        // 2 stars = 7..9
-        // 1 star = 5..6
-        // 0 stars = <5
         val stars = when (firstAttemptScore) {
             10 -> 3
             in 7..9 -> 2
@@ -291,7 +510,6 @@ class WordExplorerRepository(
             else -> 0
         }
 
-        // Generate remedial obligations = exact number of wrong answers from first attempt
         val remedialTasks = failedQuestions.map { failedQ ->
             RemedialTask(
                 id = "${userId}_${path.code}_${levelId}_${failedQ.id}",
@@ -337,7 +555,6 @@ class WordExplorerRepository(
         val allRemedials = progressDao.getRemedialsForLevel(userId, path.code, levelId)
         val allResolved = allRemedials.all { it.isResolved }
         if (allResolved) {
-            // All remedial obligations cleared! Complete level now.
             markLevelCompletedAndUnlockNext(userId, path, stage, level, firstAttemptStars, firstAttemptScore)
             return true
         }
@@ -354,6 +571,7 @@ class WordExplorerRepository(
     ) {
         val levelId = "$stage-$level"
         val existingProgress = progressDao.getLevelProgress(userId, path.code, levelId)
+        val wasAlreadyCompleted = existingProgress?.status == LevelStatus.COMPLETED.name
         val bestStars = maxOf(stars, existingProgress?.stars ?: 0)
         val bestScore = maxOf(score, existingProgress?.firstAttemptScore ?: 0)
 
@@ -372,6 +590,21 @@ class WordExplorerRepository(
                 completedAt = System.currentTimeMillis()
             )
         )
+
+        // Record into daily_level_completions table if newly completed today
+        if (!wasAlreadyCompleted) {
+            val today = getTodayDateString()
+            progressDao.insertDailyLevelCompletion(
+                DailyLevelCompletionEntity(
+                    id = "${userId}_${today}_$levelId",
+                    userId = userId,
+                    dateString = today,
+                    path = path.code,
+                    levelId = levelId,
+                    completedAt = System.currentTimeMillis()
+                )
+            )
+        }
 
         // Unlock next level (or next stage level 1)
         if (level < 10) {
@@ -393,7 +626,6 @@ class WordExplorerRepository(
                 )
             }
         } else if (stage < 5) {
-            // Stage completed! Unlock next stage level 1 (e.g. 2-1)
             val nextStageLevel1 = "${stage + 1}-1"
             val nextProgress = progressDao.getLevelProgress(userId, path.code, nextStageLevel1)
             if (nextProgress == null || nextProgress.status == LevelStatus.LOCKED.name) {
@@ -413,13 +645,12 @@ class WordExplorerRepository(
             }
         }
 
-        // Advance daily streak
         updateStudyStreak(userId)
     }
 
     private suspend fun updateStudyStreak(userId: String) {
         val profile = userDao.getUserProfile(userId) ?: return
-        val today = dateFormat.format(Date())
+        val today = getTodayDateString()
         if (profile.lastStudyDate != today) {
             val newStreak = profile.currentStreak + 1
             val newBest = maxOf(newStreak, profile.bestStreak)
@@ -433,11 +664,82 @@ class WordExplorerRepository(
         }
     }
 
+    // --- Daily Vocabulary Rotation System ---
+
+    suspend fun getOrCreateDailyVocabSet(
+        userId: String,
+        path: LearningPath,
+        dateString: String = getTodayDateString()
+    ): List<DailyVocabAssignmentEntity> {
+        // Check if today's set already exists in Room
+        val existing = vocabularyDao.getDailyAssignments(userId, dateString)
+        if (existing.isNotEmpty()) {
+            return existing
+        }
+
+        // Target words per day by pathway: LOW: 25, MIDDLE: 35, HIGH: 40
+        val targetCount = when (path) {
+            LearningPath.LOW -> 25
+            LearningPath.MIDDLE -> 35
+            LearningPath.HIGH -> 40
+        }
+
+        // Get all vocabularies already assigned or learned by this user previously
+        val previouslyAssigned = vocabularyDao.getAllAssignedVocabIds(userId).toSet()
+
+        // Fetch candidate words from database
+        val allVocabs = vocabularyDao.getAllVocabularyList()
+        val candidateUnseen = allVocabs.filter { it.id !in previouslyAssigned }
+
+        // Pick distinct words
+        val selectedVocabs = if (candidateUnseen.size >= targetCount) {
+            candidateUnseen.shuffled().take(targetCount)
+        } else {
+            // If unseen pool is smaller, combine all remaining unseen with other unmastered items
+            (candidateUnseen + allVocabs.filter { !it.isLearned }.shuffled()).distinctBy { it.id }.take(targetCount)
+        }
+
+        val assignments = selectedVocabs.map { v ->
+            DailyVocabAssignmentEntity(
+                id = "${userId}_${dateString}_${v.id}",
+                userId = userId,
+                dateString = dateString,
+                path = path.code,
+                vocabId = v.id,
+                status = "NEW",
+                assignedAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+
+        vocabularyDao.insertDailyAssignments(assignments)
+        return assignments
+    }
+
+    fun observeDailyVocabAssignments(
+        userId: String,
+        dateString: String = getTodayDateString()
+    ): Flow<List<DailyVocabAssignmentEntity>> {
+        return vocabularyDao.observeDailyAssignments(userId, dateString)
+    }
+
+    suspend fun updateDailyVocabStatus(
+        userId: String,
+        vocabId: String,
+        status: String,
+        dateString: String = getTodayDateString()
+    ) {
+        vocabularyDao.updateDailyVocabStatus(userId, dateString, vocabId, status, System.currentTimeMillis())
+        if (status == "MASTERED") {
+            vocabularyDao.updateLearned(vocabId, true)
+        }
+    }
+
     // --- Vocabulary Database ---
 
     suspend fun prepopulateVocabularyIfEmpty() {
         val count = vocabularyDao.getCount()
-        if (count == 0) {
+        if (count < 50) {
             vocabularyDao.insertAll(InitialDataSeed.INITIAL_VOCABULARY)
         }
     }

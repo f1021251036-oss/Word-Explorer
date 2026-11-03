@@ -8,8 +8,25 @@ data class UserEntity(
     @PrimaryKey val id: String,
     val email: String,
     val displayName: String,
-    val passwordHash: String,
+    val passwordHash: String = "",
+    val isEmailVerified: Boolean = false,
+    val googleId: String? = null,
+    val authProviders: String = "email_password", // "email_password", "google", or "email_password,google"
+    val otpHash: String? = null,                  // SHA-256 hash of 6-digit OTP
+    val otpExpiry: Long = 0L,                     // 5-minute expiry timestamp
+    val otpAttempts: Int = 0,                     // Failed attempt counter (max 5)
+    val lastOtpResendAt: Long = 0L,               // Cooldown tracker (60 seconds)
+    val verificationCode: String = "",            // Retained for backward compatibility
+    val codeExpiry: Long = 0L,
     val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "user_sessions")
+data class UserSessionEntity(
+    @PrimaryKey val id: String = "active_session",
+    val userId: String,
+    val authMethod: String, // "google" or "email_password"
+    val loggedInAt: Long = System.currentTimeMillis()
 )
 
 @Entity(tableName = "user_profiles")
@@ -38,6 +55,28 @@ data class LevelProgressEntity(
     val stars: Int,
     val firstAttemptScore: Int,
     val completedAt: Long = 0L
+)
+
+@Entity(tableName = "daily_level_completions")
+data class DailyLevelCompletionEntity(
+    @PrimaryKey val id: String, // "${userId}_${dateString}_${levelId}"
+    val userId: String,
+    val dateString: String,      // "yyyy-MM-dd"
+    val path: String,
+    val levelId: String,
+    val completedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "daily_vocab_assignments")
+data class DailyVocabAssignmentEntity(
+    @PrimaryKey val id: String, // "${userId}_${dateString}_${vocabId}"
+    val userId: String,
+    val dateString: String,      // "yyyy-MM-dd"
+    val path: String,
+    val vocabId: String,
+    val status: String,          // "NEW", "LEARNING", "MASTERED", "NEEDS_REVIEW"
+    val assignedAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
 )
 
 @Entity(tableName = "remedials")

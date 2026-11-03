@@ -35,10 +35,37 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
     val levels by viewModel.levelsForCurrentPath.collectAsState()
     val selectedPath by viewModel.selectedMapPath.collectAsState()
 
+    // Daily Limit & Daily Vocabulary Tracking
+    val dailyLevelsCompleted by viewModel.dailyCompletedLevelsCount.collectAsState()
+    val dailyResetCountdown by viewModel.timeUntilMidnightReset.collectAsState()
+    val dailyAssignments by viewModel.dailyVocabAssignments.collectAsState()
+
+    val totalAssignedVocab = if (dailyAssignments.isNotEmpty()) {
+        dailyAssignments.size
+    } else {
+        when (selectedPath) {
+            LearningPath.LOW -> 25
+            LearningPath.MIDDLE -> 35
+            LearningPath.HIGH -> 40
+        }
+    }
+    val completedVocabCount = dailyAssignments.count { it.status == "MASTERED" || it.status == "LEARNING" }
+    val masteredVocabCount = dailyAssignments.count { it.status == "MASTERED" }
+    val remainingDailyLevels = (3 - dailyLevelsCompleted).coerceAtLeast(0)
+
     val completedLevels = levels.count { it.status == LevelStatus.COMPLETED }
     val totalStars = levels.sumOf { it.stars }
     val nextAvailableLevel = levels.firstOrNull { it.status == LevelStatus.AVAILABLE }
         ?: levels.firstOrNull()
+
+    val currentChapterName = when (nextAvailableLevel?.stageNumber ?: 1) {
+        1 -> "Chapter 1 — Forest"
+        2 -> "Chapter 2 — Island"
+        3 -> "Chapter 3 — Ancient Rome"
+        4 -> "Chapter 4 — Mountain"
+        5 -> "Chapter 5 — Cave"
+        else -> "Chapter 1 — Forest"
+    }
 
     Scaffold(
         topBar = {
@@ -63,7 +90,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Explorer Profile Card
             Card(
@@ -75,7 +102,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
@@ -109,10 +136,149 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             fontSize = 13.sp
                         )
                         Text(
-                            text = "Bahasa Antarmuka: ${profile?.currentPath?.uiLanguage}",
+                            text = "Target: $totalAssignedVocab kata baru/hari • Max 3 level/hari",
                             color = ExplorerCream.copy(alpha = 0.8f),
                             fontSize = 12.sp
                         )
+                    }
+                }
+            }
+
+            // ==================== MANDATORY: TODAY'S LEARNING PROGRESS CARD ====================
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = DeepJungleGreen),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier.fillMaxWidth().testTag("daily_progress_dashboard_card")
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📊", fontSize = 20.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Today's Learning Progress",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Black,
+                                color = GoldYellow
+                            )
+                        }
+
+                        // Countdown to Next Daily Reset
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0x33000000)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Timer, contentDescription = null, tint = GoldYellow, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = dailyResetCountdown,
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Progress Details Grid
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // 1. Vocabulary Progress
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF1E4637),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("📖 New Vocabulary", fontSize = 11.sp, color = ExplorerCream)
+                                Text(
+                                    text = "$totalAssignedVocab words",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text("Completed: $completedVocabCount / $totalAssignedVocab", fontSize = 11.sp, color = Color(0xFFA5D6A7))
+                                Text("Mastered: $masteredVocabCount words", fontSize = 11.sp, color = GoldYellow)
+                            }
+                        }
+
+                        // 2. Adventure Level Limit (Max 3/day)
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (dailyLevelsCompleted >= 3) Color(0x33FFA000) else Color(0xFF1E4637),
+                            border = if (dailyLevelsCompleted >= 3) androidx.compose.foundation.BorderStroke(1.dp, GoldYellow) else null,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("🗺️ Adventure Levels", fontSize = 11.sp, color = ExplorerCream)
+                                Text(
+                                    text = "$dailyLevelsCompleted / 3 completed",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (dailyLevelsCompleted >= 3) GoldYellow else Color.White
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text("Remaining Today: $remainingDailyLevels", fontSize = 11.sp, color = if (remainingDailyLevels == 0) Color(0xFFFF8A80) else Color(0xFFA5D6A7))
+                                Text("Min Total: 17 Days", fontSize = 10.sp, color = ExplorerCream.copy(alpha = 0.7f))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Current Chapter & Level Info Banner
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0x33000000),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Current Chapter:",
+                                    fontSize = 11.sp,
+                                    color = ExplorerCream.copy(alpha = 0.8f)
+                                )
+                                Text(
+                                    text = currentChapterName,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "Active Level:",
+                                    fontSize = 11.sp,
+                                    color = ExplorerCream.copy(alpha = 0.8f)
+                                )
+                                Text(
+                                    text = "Level ${nextAvailableLevel?.id ?: "1-1"}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = GoldYellow
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -125,24 +291,30 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                         viewModel.currentAppScreen.value = "map"
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (dailyLevelsCompleted >= 3) ForestGreen else AdventureOrange
+                ),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp)
                     .testTag("continue_adventure_button")
             ) {
-                Icon(Icons.Default.Explore, contentDescription = null, tint = Color.White)
+                Icon(
+                    imageVector = if (dailyLevelsCompleted >= 3) Icons.Default.Map else Icons.Default.Explore,
+                    contentDescription = null,
+                    tint = Color.White
+                )
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Lanjutkan Petualangan",
+                        text = if (dailyLevelsCompleted >= 3) "Buka Peta Petualangan (Review)" else "Lanjutkan Petualangan",
                         fontWeight = FontWeight.Black,
                         fontSize = 16.sp,
                         color = Color.White
                     )
                     Text(
-                        text = "Menuju ${nextAvailableLevel?.title ?: "Stage 1-1"}",
+                        text = if (dailyLevelsCompleted >= 3) "3 level hari ini selesai • Reset dalam $dailyResetCountdown" else "Menuju ${nextAvailableLevel?.title ?: "Stage 1-1"}",
                         fontSize = 11.sp,
                         color = ExplorerCream
                     )
@@ -164,7 +336,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🔥", fontSize = 20.sp)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Daily Streak", color = ExplorerCream, fontSize = 12.sp)
+                            Text("Current Streak", color = ExplorerCream, fontSize = 12.sp)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -181,7 +353,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                     }
                 }
 
-                // Daily Words Card
+                // Total Stars Card
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = SurfaceDark),
@@ -189,19 +361,19 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🎯", fontSize = 20.sp)
+                            Text("⭐", fontSize = 20.sp)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Target Harian", color = ExplorerCream, fontSize = 12.sp)
+                            Text("Total Bintang", color = ExplorerCream, fontSize = 12.sp)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "${profile?.dailyTarget ?: 10} Kata",
+                            text = "$totalStars / 150",
                             fontWeight = FontWeight.Black,
                             fontSize = 20.sp,
-                            color = Color(0xFFA5D6A7)
+                            color = GoldYellow
                         )
                         Text(
-                            text = "Per hari aktif",
+                            text = "$completedLevels / 50 level selesai",
                             color = ExplorerCream.copy(alpha = 0.7f),
                             fontSize = 11.sp
                         )
@@ -217,46 +389,18 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = "Kemajuan Dunia (World Progress)",
+                        text = "Kemajuan Dunia (50 Levels — Min 17 Hari)",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Struktur: 5 Bab × 10 Level = 50 Level. Batas harian 3 level menjaga konsistensi jangka panjang.",
+                        fontSize = 12.sp,
+                        color = ExplorerCream.copy(alpha = 0.8f)
+                    )
                     Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("⭐ Total Bintang", color = ExplorerCream.copy(alpha = 0.8f), fontSize = 12.sp)
-                            Text("$totalStars / 150", color = GoldYellow, fontWeight = FontWeight.Black, fontSize = 20.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🏆 Level Selesai", color = ExplorerCream.copy(alpha = 0.8f), fontSize = 12.sp)
-                            Text("$completedLevels / 50", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🦊 Sahabat Aktif", color = ExplorerCream.copy(alpha = 0.8f), fontSize = 12.sp)
-                            Text(
-                                text = when (profile?.activeCompanionId) {
-                                    "parrot" -> "Echo 🦜"
-                                    "otter" -> "Splash 🦦"
-                                    "fennec" -> "Zephyr 🐾"
-                                    "hawk" -> "Sol 🦅"
-                                    "griffin" -> "Aurelius 🦁"
-                                    "phoenix" -> "Ignis 🔥"
-                                    "dragon" -> "Azure 🐉"
-                                    else -> "Rusty 🦊"
-                                },
-                                color = ExplorerCream,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
 
                     LinearProgressIndicator(
                         progress = { completedLevels / 50f },
@@ -267,6 +411,24 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                         color = ForestGreen,
                         trackColor = Color(0xFF285434)
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Hari 1–16: 3 level/hari (48 lvl)",
+                            fontSize = 11.sp,
+                            color = ExplorerCream.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "Hari 17: 2 level (Selesai)",
+                            fontSize = 11.sp,
+                            color = GoldYellow
+                        )
+                    }
                 }
             }
 
@@ -319,8 +481,13 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                                         color = Color.White,
                                         fontSize = 14.sp
                                     )
+                                    val targetWords = when (path) {
+                                        LearningPath.LOW -> 25
+                                        LearningPath.MIDDLE -> 35
+                                        LearningPath.HIGH -> 40
+                                    }
                                     Text(
-                                        text = "${path.targetWordsPerDay} kata/hari • ${path.uiLanguage}",
+                                        text = "$targetWords kata baru/hari • ${path.uiLanguage}",
                                         color = ExplorerCream.copy(alpha = 0.8f),
                                         fontSize = 12.sp
                                     )

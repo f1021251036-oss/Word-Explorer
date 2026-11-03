@@ -15,6 +15,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): UserEntity?
 
+    @Query("SELECT * FROM users WHERE googleId = :googleId LIMIT 1")
+    suspend fun getUserByGoogleId(googleId: String): UserEntity?
+
     @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
     suspend fun getUserById(id: String): UserEntity?
 
@@ -26,6 +29,16 @@ interface UserDao {
 
     @Query("SELECT * FROM user_profiles WHERE userId = :userId LIMIT 1")
     suspend fun getUserProfile(userId: String): UserProfileEntity?
+
+    // Session Management for Persistent Login
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveSession(session: UserSessionEntity)
+
+    @Query("SELECT * FROM user_sessions WHERE id = 'active_session' LIMIT 1")
+    suspend fun getActiveSession(): UserSessionEntity?
+
+    @Query("DELETE FROM user_sessions WHERE id = 'active_session'")
+    suspend fun clearSession()
 }
 
 @Dao
@@ -44,6 +57,16 @@ interface ProgressDao {
 
     @Query("SELECT * FROM level_progress WHERE userId = :userId AND path = :path AND levelId = :levelId LIMIT 1")
     suspend fun getLevelProgress(userId: String, path: String, levelId: String): LevelProgressEntity?
+
+    // Daily Level Completions (Anti-Exploit 3 Levels/Day Limit)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDailyLevelCompletion(completion: DailyLevelCompletionEntity)
+
+    @Query("SELECT * FROM daily_level_completions WHERE userId = :userId AND dateString = :dateString")
+    suspend fun getDailyLevelCompletions(userId: String, dateString: String): List<DailyLevelCompletionEntity>
+
+    @Query("SELECT * FROM daily_level_completions WHERE userId = :userId AND dateString = :dateString")
+    fun observeDailyLevelCompletions(userId: String, dateString: String): Flow<List<DailyLevelCompletionEntity>>
 
     // Remedials
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -74,6 +97,9 @@ interface VocabularyDao {
     @Query("SELECT * FROM vocabulary ORDER BY word ASC")
     fun observeAllVocabulary(): Flow<List<VocabularyEntity>>
 
+    @Query("SELECT * FROM vocabulary ORDER BY word ASC")
+    suspend fun getAllVocabularyList(): List<VocabularyEntity>
+
     @Query("SELECT * FROM vocabulary WHERE word LIKE '%' || :query || '%' OR indonesian LIKE '%' || :query || '%' ORDER BY word ASC")
     fun searchVocabulary(query: String): Flow<List<VocabularyEntity>>
 
@@ -82,4 +108,23 @@ interface VocabularyDao {
 
     @Query("UPDATE vocabulary SET isLearned = :learned WHERE id = :id")
     suspend fun updateLearned(id: String, learned: Boolean)
+
+    @Query("SELECT * FROM vocabulary WHERE id = :id LIMIT 1")
+    suspend fun getVocabularyById(id: String): VocabularyEntity?
+
+    // Daily Vocabulary Rotation Tracking
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDailyAssignments(assignments: List<DailyVocabAssignmentEntity>)
+
+    @Query("SELECT * FROM daily_vocab_assignments WHERE userId = :userId AND dateString = :dateString")
+    fun observeDailyAssignments(userId: String, dateString: String): Flow<List<DailyVocabAssignmentEntity>>
+
+    @Query("SELECT * FROM daily_vocab_assignments WHERE userId = :userId AND dateString = :dateString")
+    suspend fun getDailyAssignments(userId: String, dateString: String): List<DailyVocabAssignmentEntity>
+
+    @Query("SELECT DISTINCT vocabId FROM daily_vocab_assignments WHERE userId = :userId")
+    suspend fun getAllAssignedVocabIds(userId: String): List<String>
+
+    @Query("UPDATE daily_vocab_assignments SET status = :status, updatedAt = :updatedAt WHERE userId = :userId AND dateString = :dateString AND vocabId = :vocabId")
+    suspend fun updateDailyVocabStatus(userId: String, dateString: String, vocabId: String, status: String, updatedAt: Long)
 }
