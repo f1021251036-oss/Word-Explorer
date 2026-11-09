@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Primary user profile for Word Explorer student",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique Firebase Authentication user ID" },
+        "displayName": { "type": "string", "description": "Student display name" },
+        "email": { "type": "string", "format": "email", "description": "Student email address" },
+        "photoURL": { "type": "string", "description": "Profile avatar URL or empty string" },
+        "authProviders": { "type": "string", "description": "Comma-separated list of authentication providers" },
+        "preferredLanguage": { "type": "string", "description": "User preferred language" },
+        "learningPathway": { "type": "string", "enum": ["LOW", "MIDDLE", "HIGH"], "description": "Assigned CEFR learning pathway" },
+        "accountStatus": { "type": "string", "enum": ["ACTIVE", "PENDING_VERIFICATION", "SUSPENDED"], "description": "Account status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of account creation" },
+        "lastLoginAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last login" }
+      },
+      "required": ["uid", "displayName", "email", "authProviders", "learningPathway"]
+    },
+    "LearningProgress": {
+      "title": "LearningProgress",
+      "description": "Student main adventure exploration and level unlock progress",
+      "type": "object",
+      "properties": {
+        "currentChapter": { "type": "integer", "description": "Current active chapter (1 to 5)" },
+        "currentLevel": { "type": "integer", "description": "Current active level (1 to 10)" },
+        "completedLevels": { "type": "array", "description": "List of completed level IDs like '1-1'" },
+        "unlockedLevels": { "type": "array", "description": "List of unlocked level IDs" },
+        "totalStars": { "type": "integer", "description": "Total stars accumulated" },
+        "totalCompletedLevels": { "type": "integer", "description": "Number of unique completed levels" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last progress update" }
+      },
+      "required": ["currentChapter", "currentLevel", "completedLevels", "unlockedLevels", "totalStars", "totalCompletedLevels"]
+    },
+    "DailyActivity": {
+      "title": "DailyActivity",
+      "description": "Daily metrics tracking adventure limits and streak qualifications",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "description": "Calendar date string YYYY-MM-DD" },
+        "vocabularyCompleted": { "type": "integer", "description": "Count of vocabulary completed today" },
+        "adventureLevelsCompleted": { "type": "integer", "description": "Count of adventure levels completed today, maximum 3" },
+        "dailyTargetCompleted": { "type": "boolean", "description": "Whether daily vocabulary goal was met" },
+        "streakQualified": { "type": "boolean", "description": "Whether streak criteria was satisfied" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update" }
+      },
+      "required": ["date", "vocabularyCompleted", "adventureLevelsCompleted", "dailyTargetCompleted", "streakQualified"]
+    },
+    "DailyVocabulary": {
+      "title": "DailyVocabulary",
+      "description": "Daily rotation set of vocabulary assigned to student",
+      "type": "object",
+      "properties": {
+        "assignmentDate": { "type": "string", "description": "Calendar date string YYYY-MM-DD" },
+        "assignedVocabularyIds": { "type": "array", "description": "IDs of words assigned for today" },
+        "totalAssigned": { "type": "integer", "description": "Total words assigned today based on pathway" },
+        "completedCount": { "type": "integer", "description": "Number of words finished today" },
+        "completed": { "type": "boolean", "description": "Whether full daily set is completed" }
+      },
+      "required": ["assignmentDate", "assignedVocabularyIds", "totalAssigned", "completedCount", "completed"]
+    },
+    "QuizResult": {
+      "title": "QuizResult",
+      "description": "Completed level quiz attempt results",
+      "type": "object",
+      "properties": {
+        "chapter": { "type": "integer", "description": "Chapter number (1-5)" },
+        "level": { "type": "integer", "description": "Level number (1-10)" },
+        "score": { "type": "integer", "description": "Quiz score percentage" },
+        "stars": { "type": "integer", "description": "Stars awarded (1-3)" },
+        "remedialRequired": { "type": "boolean", "description": "Whether remedial questions are needed" },
+        "remedialCompleted": { "type": "boolean", "description": "Whether remedial was successfully cleared" },
+        "completedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of completion" }
+      },
+      "required": ["chapter", "level", "score", "stars", "remedialRequired", "remedialCompleted"]
+    },
+    "VocabularyProgress": {
+      "title": "VocabularyProgress",
+      "description": "Individual word mastery status for the student",
+      "type": "object",
+      "properties": {
+        "vocabularyId": { "type": "string", "description": "Unique vocabulary ID" },
+        "word": { "type": "string", "description": "English word" },
+        "meaning": { "type": "string", "description": "Indonesian translation / definition" },
+        "learningStatus": { "type": "string", "enum": ["NEW", "LEARNING", "MASTERED", "NEEDS_REVIEW"], "description": "Word status" },
+        "assignedDate": { "type": "string", "description": "First assignment date" },
+        "reviewCount": { "type": "integer", "description": "How many times reviewed" }
+      },
+      "required": ["vocabularyId", "word", "learningStatus", "reviewCount"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document owned by the authenticated user"
+    },
+    "/users/{userId}/learningProgress/{progressId}": {
+      "schema": "LearningProgress",
+      "description": "Student exploration progress document"
+    },
+    "/users/{userId}/dailyActivity/{date}": {
+      "schema": "DailyActivity",
+      "description": "Daily activity log enforcing 3 adventure levels daily cap"
+    },
+    "/users/{userId}/dailyVocabulary/{date}": {
+      "schema": "DailyVocabulary",
+      "description": "Daily assigned vocabulary rotation record"
+    },
+    "/users/{userId}/quizResults/{resultId}": {
+      "schema": "QuizResult",
+      "description": "Quiz level attempt records"
+    },
+    "/users/{userId}/vocabulary/{vocabId}": {
+      "schema": "VocabularyProgress",
+      "description": "Student vocabulary mastery statuses"
+    }
+  }
+}

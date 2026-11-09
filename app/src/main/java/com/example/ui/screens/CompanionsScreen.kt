@@ -50,7 +50,7 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                 onTabSelected = { viewModel.currentAppScreen.value = it }
             )
         },
-        containerColor = DarkBackground
+        containerColor = Cream
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -61,8 +61,9 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
             // Header Card
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = DeepJungleGreen,
-                border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
+                color = DeepForestGreen,
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, SandGold),
+                shadowElevation = 3.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -74,16 +75,16 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                         Text(
                             text = "🐾 Sahabat Hewan Petualang",
                             fontWeight = FontWeight.Bold,
-                            color = GoldYellow,
+                            color = SandGold,
                             fontSize = 16.sp
                         )
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = AdventureOrange
+                            color = SandGold
                         ) {
                             Text(
                                 text = "🔥 Streak: $currentStreak Hari",
-                                color = Color.White,
+                                color = DeepForestGreen,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -93,7 +94,7 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Selesaikan target belajar harian berturut-turut untuk membuka sahabat hewan baru. Sahabat aktif akan menemanimu di Explorer Map!",
-                        color = ExplorerCream,
+                        color = PureWhite,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
@@ -116,16 +117,17 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isEquipped) Color(0xFF1E4637) else SurfaceDark
+                            containerColor = PureWhite
                         ),
                         border = androidx.compose.foundation.BorderStroke(
-                            1.5.dp,
+                            if (isEquipped) 2.5.dp else 1.5.dp,
                             when {
-                                isEquipped -> GoldYellow
-                                isUnlocked -> ForestGreen
-                                else -> Color(0xFF283B33)
+                                isEquipped -> DeepForestGreen
+                                isUnlocked -> SageGreen
+                                else -> SageGreen.copy(alpha = 0.4f)
                             }
                         ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isEquipped) 4.dp else 2.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("companion_${companion.id}")
@@ -140,7 +142,8 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                             Box(contentAlignment = Alignment.Center) {
                                 Surface(
                                     shape = CircleShape,
-                                    color = if (isUnlocked) Color(0xFF285434) else Color(0xFF21302A),
+                                    color = if (isEquipped) SandGold else Cream,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen),
                                     modifier = Modifier.size(56.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -151,11 +154,11 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                                 if (!isUnlocked) {
                                     Surface(
                                         shape = CircleShape,
-                                        color = Color.Black.copy(alpha = 0.6f),
+                                        color = DeepForestGreen.copy(alpha = 0.65f),
                                         modifier = Modifier.size(56.dp)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Default.Lock, contentDescription = "Locked", tint = Color.LightGray, modifier = Modifier.size(20.dp))
+                                            Icon(Icons.Default.Lock, contentDescription = "Locked", tint = PureWhite, modifier = Modifier.size(20.dp))
                                         }
                                     }
                                 }
@@ -166,16 +169,16 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                             Text(
                                 text = companion.name,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isUnlocked) GoldYellow else Color.Gray,
-                                fontSize = 13.sp,
+                                color = if (isUnlocked) DeepForestGreen else DeepForestGreen.copy(alpha = 0.5f),
+                                fontSize = 14.sp,
                                 textAlign = TextAlign.Center
                             )
 
                             Text(
                                 text = "${companion.species} • ${companion.trait}",
-                                color = ForestGreen,
+                                color = SageGreen,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center
                             )
 
@@ -183,7 +186,7 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
 
                             Text(
                                 text = companion.description,
-                                color = ExplorerCream.copy(alpha = 0.8f),
+                                color = DeepForestGreen.copy(alpha = 0.85f),
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
                                 lineHeight = 15.sp
@@ -195,7 +198,8 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                                 Button(
                                     onClick = { viewModel.equipCompanion(companion) },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isEquipped) GoldYellow else AdventureOrange
+                                        containerColor = if (isEquipped) SandGold else DeepForestGreen,
+                                        contentColor = if (isEquipped) DeepForestGreen else PureWhite
                                     ),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
@@ -206,19 +210,21 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                                         text = if (isEquipped) "✓ Aktif" else "Pilih Teman",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
-                                        color = if (isEquipped) DeepJungleGreen else Color.White
+                                        color = if (isEquipped) DeepForestGreen else PureWhite
                                     )
                                 }
                             } else {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFF283B33),
+                                    color = Cream,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
                                         text = "Buka: ${companion.requiredStreak} hari streak",
-                                        color = ExplorerCream.copy(alpha = 0.6f),
+                                        color = DeepForestGreen,
                                         fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(vertical = 6.dp)
                                     )

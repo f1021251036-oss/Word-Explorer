@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,14 +10,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.models.Question
 import com.example.data.models.QuestionType
+import com.example.ui.components.*
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.QuizUiState
 import com.example.ui.viewmodel.WordExplorerViewModel
@@ -33,10 +40,15 @@ fun QuizScreen(viewModel: WordExplorerViewModel) {
     val quizState by viewModel.quizState.collectAsState()
     val isSoundEnabled by viewModel.isSoundEnabled.collectAsState()
 
+    // Handle back gesture/button gracefully in all states: always return to map
+    BackHandler {
+        viewModel.exitQuizToMap()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(Cream)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -75,6 +87,118 @@ fun QuizScreen(viewModel: WordExplorerViewModel) {
     }
 }
 
+/**
+ * Hand-Drawn Waypoint Track: Replaces generic linear progress bar with a surveyor's path
+ */
+@Composable
+fun ExpeditionWaypointTrack(
+    currentIndex: Int,
+    totalCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "LOG POS SURVEYOR ${currentIndex + 1} / $totalCount",
+                fontFamily = CinzelFontFamily,
+                fontWeight = FontWeight.Bold,
+                color = DeepForestGreen,
+                fontSize = 12.sp,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "${((currentIndex + 1) * 100 / totalCount.coerceAtLeast(1))}% SELESAI",
+                fontFamily = CinzelFontFamily,
+                fontWeight = FontWeight.Bold,
+                color = DeepForestGreen,
+                fontSize = 11.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Waypoint dots row connected by inked route line
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+                val cy = h / 2f
+                val strokeW = 1.5.dp.toPx()
+
+                // Route dashed background track
+                drawLine(
+                    color = SageGreen.copy(alpha = 0.45f),
+                    start = Offset(16.dp.toPx(), cy),
+                    end = Offset(w - 16.dp.toPx(), cy),
+                    strokeWidth = strokeW,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)),
+                    cap = StrokeCap.Round
+                )
+
+                // Route traversed solid track
+                val completedFraction = if (totalCount > 1) {
+                    (currentIndex.toFloat() / (totalCount - 1).toFloat()).coerceIn(0f, 1f)
+                } else 1f
+                val activeEndX = 16.dp.toPx() + (w - 32.dp.toPx()) * completedFraction
+
+                drawLine(
+                    color = DeepForestGreen,
+                    start = Offset(16.dp.toPx(), cy),
+                    end = Offset(activeEndX, cy),
+                    strokeWidth = strokeW * 1.5f,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            // Waypoint Markers
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                for (i in 0 until totalCount) {
+                    val isDone = i < currentIndex
+                    val isCurrent = i == currentIndex
+
+                    Box(
+                        modifier = Modifier
+                            .size(if (isCurrent) 16.dp else 10.dp)
+                            .shadow(if (isCurrent) 2.dp else 0.dp, CircleShape)
+                            .background(
+                                color = when {
+                                    isCurrent -> DeepForestGreen
+                                    isDone -> SandGold
+                                    else -> Cream
+                                },
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = if (isCurrent) 2.dp else 1.dp,
+                                color = when {
+                                    isCurrent -> SandGold
+                                    isDone -> DeepForestGreen
+                                    else -> SageGreen
+                                },
+                                shape = CircleShape
+                            )
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun MainQuizContent(
     state: QuizUiState,
@@ -93,9 +217,9 @@ fun MainQuizContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp)
+            .padding(18.dp)
     ) {
-        // Top Bar
+        // Surveyor Header Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,90 +230,67 @@ fun MainQuizContent(
                     onClick = onExit,
                     modifier = Modifier.testTag("exit_quiz_button")
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Exit Quiz", tint = ExplorerCream)
+                    ExpeditionIconExit(tint = DeepForestGreen, modifier = Modifier.size(24.dp))
                 }
                 IconButton(
                     onClick = onToggleSound,
                     modifier = Modifier.testTag("quiz_sound_toggle_button")
                 ) {
-                    Icon(
-                        imageVector = if (isSoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                        contentDescription = if (isSoundEnabled) "Mute Sound" else "Unmute Sound",
-                        tint = if (isSoundEnabled) GoldYellow else Color.Gray
-                    )
+                    ExpeditionIconSound(isEnabled = isSoundEnabled, tint = DeepForestGreen, modifier = Modifier.size(22.dp))
                 }
             }
 
+            // Stage Seal
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = DeepJungleGreen,
-                border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen)
+                shape = RoundedCornerShape(8.dp),
+                color = DeepForestGreen,
+                border = androidx.compose.foundation.BorderStroke(1.dp, SandGold),
+                shadowElevation = 2.dp
             ) {
                 Text(
-                    text = "Stage ${state.stage}-${state.level}",
-                    color = GoldYellow,
+                    text = "WILAYAH ${state.stage}-${state.level}",
+                    fontFamily = CinzelFontFamily,
+                    color = SandGold,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
 
+            // Score Stamp
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFF285434)
+                shape = RoundedCornerShape(8.dp),
+                color = SandGold,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DeepForestGreen),
+                shadowElevation = 2.dp
             ) {
                 Text(
-                    text = "Skor: ${state.firstAttemptScore}/10",
-                    color = Color.White,
+                    text = "SKOR: ${state.firstAttemptScore}/10",
+                    fontFamily = CinzelFontFamily,
+                    color = DeepForestGreen,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Progress Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Pertanyaan ${state.currentQuestionIndex + 1} dari $totalQuestions",
-                color = ExplorerCream,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "${((state.currentQuestionIndex + 1) * 100 / totalQuestions)}%",
-                color = GoldYellow,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LinearProgressIndicator(
-            progress = { (state.currentQuestionIndex + 1).toFloat() / totalQuestions.toFloat() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            color = AdventureOrange,
-            trackColor = Color(0xFF285434)
+        // Expedition Waypoint Track
+        ExpeditionWaypointTrack(
+            currentIndex = state.currentQuestionIndex,
+            totalCount = totalQuestions
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Question Type Badge & Prompt Header
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-            modifier = Modifier.fillMaxWidth()
+        // Question Dossier Sheet (Parchment with Inked Crosshairs & Corner Details)
+        ParchmentDossierCard(
+            modifier = Modifier.fillMaxWidth(),
+            rotation = 0.5f,
+            backgroundColor = PureWhite
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(
@@ -197,60 +298,91 @@ fun MainQuizContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Question Type Badge (Typographic & Custom Glyph, No Emojis)
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = when (currentQ.type) {
-                            QuestionType.DRAG_AND_MATCH -> Color(0xFF2962FF)
-                            QuestionType.FILL_BLANK -> Color(0xFFE65100)
-                            QuestionType.IMAGE_VOCABULARY -> Color(0xFF00897B)
-                            QuestionType.WORD_UNSCRAMBLE -> Color(0xFF8E24AA)
-                            QuestionType.SENTENCE_COMPLETION -> Color(0xFF43A047)
-                            QuestionType.MULTIPLE_CHOICE -> ForestGreen
-                        }
+                        shape = RoundedCornerShape(6.dp),
+                        color = DeepForestGreen,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SandGold)
                     ) {
-                        Text(
-                            text = when (currentQ.type) {
-                                QuestionType.DRAG_AND_MATCH -> "🔗 Drag & Match"
-                                QuestionType.FILL_BLANK -> "✍️ Fill in the Blanks"
-                                QuestionType.IMAGE_VOCABULARY -> "🖼️ Image Vocabulary"
-                                QuestionType.WORD_UNSCRAMBLE -> "🔤 Word Arrangement"
-                                QuestionType.SENTENCE_COMPLETION -> "📝 Sentence Completion"
-                                QuestionType.MULTIPLE_CHOICE -> "Pilihan Ganda"
-                            },
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            when (currentQ.type) {
+                                QuestionType.DRAG_AND_MATCH -> ExpeditionIconMap(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.FILL_BLANK -> ExpeditionIconScroll(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.IMAGE_VOCABULARY -> ExpeditionIconCompass(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.WORD_UNSCRAMBLE, QuestionType.SCRAMBLED_LETTERS -> ExpeditionIconBook(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.SENTENCE_COMPLETION -> ExpeditionIconScroll(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.MULTIPLE_CHOICE -> ExpeditionIconCompass(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.SENTENCE_BUILDER -> ExpeditionIconScroll(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.LISTEN_AND_TYPE -> ExpeditionIconSound(isEnabled = true, tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.PICTURE_TAP -> ExpeditionIconCompass(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.CATEGORY_SORT -> ExpeditionIconBackpack(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.MEMORY_FLIP -> ExpeditionIconBook(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.TRUE_OR_FALSE -> ExpeditionIconCompass(tint = SandGold, modifier = Modifier.size(14.dp))
+                                QuestionType.WORD_HUNT -> ExpeditionIconMap(tint = SandGold, modifier = Modifier.size(14.dp))
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = when (currentQ.type) {
+                                    QuestionType.DRAG_AND_MATCH -> "PENCOCOKAN KATA"
+                                    QuestionType.FILL_BLANK -> "MELENGKAPI LOG"
+                                    QuestionType.IMAGE_VOCABULARY -> "IDENTIFIKASI VISUAL"
+                                    QuestionType.WORD_UNSCRAMBLE, QuestionType.SCRAMBLED_LETTERS -> "DEKODE HURUF"
+                                    QuestionType.SENTENCE_COMPLETION -> "SINTAKSIS KALIMAT"
+                                    QuestionType.MULTIPLE_CHOICE -> "INQUIRI JALUR"
+                                    QuestionType.SENTENCE_BUILDER -> "SUSUN KALIMAT"
+                                    QuestionType.LISTEN_AND_TYPE -> "DENGAR & KETIK"
+                                    QuestionType.PICTURE_TAP -> "KETUK GAMBAR"
+                                    QuestionType.CATEGORY_SORT -> "SORTIR KATEGORI"
+                                    QuestionType.MEMORY_FLIP -> "KARTU MEMORI"
+                                    QuestionType.TRUE_OR_FALSE -> "BENAR ATAU SALAH"
+                                    QuestionType.WORD_HUNT -> "CARI KATA"
+                                },
+                                fontFamily = CinzelFontFamily,
+                                color = SandGold,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp
+                            )
+                        }
                     }
 
-                    // Pronunciation Practice Audio Button
+                    // Pronunciation Practice Audio Button (Tactile Brass Badge)
                     Surface(
                         onClick = { viewModel.speakWord(currentQ.targetWord) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF285434),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
+                        shape = RoundedCornerShape(8.dp),
+                        color = SandGold,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DeepForestGreen),
+                        shadowElevation = 2.dp,
                         modifier = Modifier.testTag("pronunciation_speaker_button")
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.VolumeUp, contentDescription = "Dengar Pengucapan", tint = GoldYellow, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Dengar", color = GoldYellow, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            ExpeditionIconSound(isEnabled = true, tint = DeepForestGreen, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "DENGAR",
+                                fontFamily = CinzelFontFamily,
+                                color = DeepForestGreen,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = currentQ.prompt,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    lineHeight = 22.sp
+                    color = DeepForestGreen,
+                    lineHeight = 24.sp
                 )
 
                 currentQ.subText?.let { sub ->
@@ -258,14 +390,14 @@ fun MainQuizContent(
                     Text(
                         text = sub,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = ExplorerCream,
-                        lineHeight = 19.sp
+                        color = DeepForestGreen.copy(alpha = 0.85f),
+                        lineHeight = 20.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // --- Interactive Exercise Renderers ---
         when (currentQ.type) {
@@ -277,14 +409,66 @@ fun MainQuizContent(
                 )
             }
             QuestionType.FILL_BLANK -> {
-                FillBlankRenderer(
+                InteractiveFillBlankRenderer(
                     question = currentQ,
                     viewModel = viewModel,
                     isAnswerChecked = state.isAnswerChecked
                 )
             }
-            QuestionType.WORD_UNSCRAMBLE -> {
+            QuestionType.WORD_UNSCRAMBLE, QuestionType.SCRAMBLED_LETTERS -> {
                 WordUnscrambleRenderer(
+                    question = currentQ,
+                    viewModel = viewModel,
+                    isAnswerChecked = state.isAnswerChecked
+                )
+            }
+            QuestionType.SENTENCE_BUILDER -> {
+                SentenceBuilderRenderer(
+                    question = currentQ,
+                    viewModel = viewModel,
+                    isAnswerChecked = state.isAnswerChecked
+                )
+            }
+            QuestionType.LISTEN_AND_TYPE -> {
+                ListenAndTypeRenderer(
+                    question = currentQ,
+                    viewModel = viewModel,
+                    isAnswerChecked = state.isAnswerChecked
+                )
+            }
+            QuestionType.PICTURE_TAP -> {
+                PictureTapRenderer(
+                    question = currentQ,
+                    selectedOption = state.selectedOption,
+                    isAnswerChecked = state.isAnswerChecked,
+                    isAnswerCorrect = state.isAnswerCorrect,
+                    onOptionSelected = onOptionSelected
+                )
+            }
+            QuestionType.CATEGORY_SORT -> {
+                CategorySortRenderer(
+                    question = currentQ,
+                    viewModel = viewModel,
+                    isAnswerChecked = state.isAnswerChecked
+                )
+            }
+            QuestionType.MEMORY_FLIP -> {
+                MemoryFlipRenderer(
+                    question = currentQ,
+                    viewModel = viewModel,
+                    isAnswerChecked = state.isAnswerChecked
+                )
+            }
+            QuestionType.TRUE_OR_FALSE -> {
+                TrueFalseRenderer(
+                    question = currentQ,
+                    viewModel = viewModel,
+                    isAnswerChecked = state.isAnswerChecked,
+                    isAnswerCorrect = state.isAnswerCorrect
+                )
+            }
+            QuestionType.WORD_HUNT -> {
+                WordHuntRenderer(
                     question = currentQ,
                     viewModel = viewModel,
                     isAnswerChecked = state.isAnswerChecked
@@ -311,95 +495,98 @@ fun MainQuizContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Immediate Feedback Explanation Card
         AnimatedVisibility(visible = state.isAnswerChecked) {
             Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (state.isAnswerCorrect) SuccessGreen.copy(alpha = 0.2f) else ErrorRed.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(12.dp),
+                color = PureWhite,
                 border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    if (state.isAnswerCorrect) SuccessGreen else ErrorRed
+                    1.5.dp,
+                    if (state.isAnswerCorrect) Color(0xFF2D5A27) else Color(0xFFA8422B)
                 ),
+                shadowElevation = 3.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (state.isAnswerCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
-                            contentDescription = null,
-                            tint = if (state.isAnswerCorrect) SuccessGreen else ErrorRed,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        if (state.isAnswerCorrect) {
+                            ExpeditionIconCheckmark(
+                                tint = Color(0xFF2D5A27),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            ExpeditionIconCross(
+                                tint = Color(0xFFA8422B),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (state.isAnswerCorrect) "Luar Biasa, Jawaban Benar! 🎉" else "Jawaban Belum Tepat!",
+                            text = if (state.isAnswerCorrect) "Langkah Tepat Terverifikasi!" else "Analisis Jalur Kurang Tepat!",
+                            fontFamily = CinzelFontFamily,
                             fontWeight = FontWeight.Bold,
-                            color = if (state.isAnswerCorrect) SuccessGreen else ErrorRed,
-                            fontSize = 15.sp
+                            color = if (state.isAnswerCorrect) Color(0xFF2D5A27) else Color(0xFFA8422B),
+                            fontSize = 14.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = currentQ.explanation,
-                        color = Color.White,
+                        color = DeepForestGreen,
                         fontSize = 13.sp,
-                        lineHeight = 18.sp
+                        lineHeight = 20.sp
                     )
                 }
             }
         }
 
-        // Action Button: Periksa Jawaban / Lanjut
+        // Action Button: Tactile Signpost Button
         if (!state.isAnswerChecked) {
             val canCheck = when (currentQ.type) {
                 QuestionType.DRAG_AND_MATCH -> {
                     val pairs = currentQ.matchingPairs ?: emptyMap()
                     pairs.isNotEmpty() && viewModel.matchingAnswers.size == pairs.size
                 }
-                QuestionType.FILL_BLANK -> viewModel.typedAnswer.collectAsState().value.isNotBlank()
-                QuestionType.WORD_UNSCRAMBLE -> viewModel.scrambledSlots.isNotEmpty()
+                QuestionType.FILL_BLANK, QuestionType.LISTEN_AND_TYPE -> viewModel.typedAnswer.collectAsState().value.isNotBlank()
+                QuestionType.WORD_UNSCRAMBLE, QuestionType.SCRAMBLED_LETTERS -> viewModel.scrambledSlots.isNotEmpty()
+                QuestionType.SENTENCE_BUILDER -> viewModel.sentenceBuilderSlots.isNotEmpty()
+                QuestionType.CATEGORY_SORT -> {
+                    val totalWords = currentQ.categoryBuckets?.values?.sumOf { it.size } ?: 0
+                    totalWords > 0 && viewModel.categoryBucketAssignments.size == totalWords
+                }
+                QuestionType.MEMORY_FLIP -> {
+                    val pairs = currentQ.matchingPairs ?: emptyMap()
+                    pairs.isNotEmpty() && viewModel.memoryMatchedCards.size == pairs.size * 2
+                }
+                QuestionType.TRUE_OR_FALSE -> viewModel.selectedTrueFalse != null
+                QuestionType.WORD_HUNT -> viewModel.selectedGridCoords.size == currentQ.targetWord.length
                 else -> state.selectedOption != null
             }
 
-            Button(
+            TactileSignpostButton(
+                label = "PERIKSA JAWABAN",
                 onClick = onCheckAnswer,
                 enabled = canCheck,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .testTag("quiz_check_button")
-            ) {
-                Text("Periksa Jawaban", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-            }
+                testTag = "quiz_check_button",
+                modifier = Modifier.fillMaxWidth()
+            )
         } else {
-            Button(
+            TactileSignpostButton(
+                label = if (state.currentQuestionIndex < totalQuestions - 1) "PERTANYAAN BERIKUTNYA" else "SELESAIKAN MISI WILAYAH",
                 onClick = onNextQuestion,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .testTag("quiz_next_button")
-            ) {
-                Text(
-                    text = if (state.currentQuestionIndex < totalQuestions - 1) "Pertanyaan Berikutnya ➔" else "Selesaikan Misi Level 🏆",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.White
-                )
-            }
+                testTag = "quiz_next_button",
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
-// 1. Drag and Match Renderer
+// 1. Drag and Match Renderer (Ledger Specimen Pairing)
 @Composable
 fun DragAndMatchRenderer(
     question: Question,
@@ -415,9 +602,10 @@ fun DragAndMatchRenderer(
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
-            text = "Ketuk kata bahasa Inggris, lalu ketuk arti bahasa Indonesia yang cocok:",
+            text = "Ketuk kata bahasa Inggris, lalu ketuk arti padanan bahasa Indonesia:",
             fontSize = 12.sp,
-            color = ExplorerCream.copy(alpha = 0.8f)
+            color = DeepForestGreen,
+            fontWeight = FontWeight.Medium
         )
 
         Row(
@@ -437,15 +625,16 @@ fun DragAndMatchRenderer(
                                 viewModel.speakWord(eng)
                             }
                         },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = when {
-                            isSelected -> GoldYellow
-                            isPaired -> Color(0xFF1B4E38)
-                            else -> SurfaceDark
+                            isSelected -> SandGold
+                            isPaired -> Cream
+                            else -> PureWhite
                         },
+                        shadowElevation = if (isSelected) 3.dp else 1.dp,
                         border = androidx.compose.foundation.BorderStroke(
                             1.5.dp,
-                            if (isSelected) AdventureOrange else ForestGreen.copy(alpha = 0.5f)
+                            if (isSelected) DeepForestGreen else SageGreen
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -458,15 +647,14 @@ fun DragAndMatchRenderer(
                             Text(
                                 text = eng,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isSelected) DeepJungleGreen else Color.White,
-                                fontSize = 14.sp,
+                                color = DeepForestGreen,
+                                fontSize = 13.sp,
                                 modifier = Modifier.weight(1f)
                             )
-                            Icon(
-                                Icons.Default.VolumeUp,
-                                contentDescription = "Dengar",
-                                tint = if (isSelected) DeepJungleGreen else GoldYellow,
-                                modifier = Modifier.size(16.dp)
+                            ExpeditionIconSound(
+                                isEnabled = true,
+                                tint = DeepForestGreen,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
@@ -488,14 +676,15 @@ fun DragAndMatchRenderer(
                                 }
                             }
                         },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = when {
-                            pairedEng != null -> Color(0xFF2E6B4F)
-                            else -> SurfaceDark
+                            pairedEng != null -> SandGold
+                            else -> PureWhite
                         },
+                        shadowElevation = if (pairedEng != null) 3.dp else 1.dp,
                         border = androidx.compose.foundation.BorderStroke(
                             1.5.dp,
-                            if (pairedEng != null) GoldYellow else Color(0xFF3B6B58)
+                            if (pairedEng != null) DeepForestGreen else SageGreen
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -505,8 +694,8 @@ fun DragAndMatchRenderer(
                             Text(
                                 text = indo,
                                 fontWeight = FontWeight.Medium,
-                                color = Color.White,
-                                fontSize = 13.sp
+                                color = DeepForestGreen,
+                                fontSize = 12.sp
                             )
                             if (pairedEng != null) {
                                 Spacer(modifier = Modifier.height(2.dp))
@@ -514,12 +703,12 @@ fun DragAndMatchRenderer(
                                     Text(
                                         text = "➔ $pairedEng",
                                         fontWeight = FontWeight.Bold,
-                                        color = GoldYellow,
+                                        color = DeepForestGreen,
                                         fontSize = 11.sp
                                     )
                                     if (!isAnswerChecked) {
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(text = "(Batal)", fontSize = 9.sp, color = ExplorerCream.copy(alpha = 0.6f))
+                                        Text(text = "(Batal)", fontSize = 9.sp, color = SageGreen)
                                     }
                                 }
                             }
@@ -542,55 +731,73 @@ fun FillBlankRenderer(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = Color(0xFF1B3D2F),
-            border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
+            shape = RoundedCornerShape(12.dp),
+            color = PureWhite,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
+            shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Text(
-                    text = "Lengkapi kalimat bahasa Inggris di bawah ini:",
-                    fontSize = 12.sp,
-                    color = GoldYellow,
-                    fontWeight = FontWeight.Bold
+                    text = "LENGKAPI LOG KALIMAT SURVEYOR:",
+                    fontFamily = CinzelFontFamily,
+                    fontSize = 11.sp,
+                    color = SageGreen,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = question.sentenceWithBlank ?: question.prompt,
                     fontSize = 15.sp,
-                    color = Color.White,
+                    color = DeepForestGreen,
                     fontWeight = FontWeight.Medium,
                     lineHeight = 22.sp
                 )
             }
         }
 
-        OutlinedTextField(
-            value = typed,
-            onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
-            label = { Text("Ketik kata bahasa Inggris...") },
-            enabled = !isAnswerChecked,
-            trailingIcon = {
-                IconButton(onClick = { viewModel.speakWord(question.correctAnswer) }) {
-                    Icon(Icons.Default.VolumeUp, contentDescription = "Dengar", tint = GoldYellow)
-                }
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GoldYellow,
-                unfocusedBorderColor = ForestGreen,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
-            ),
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("fill_blank_input_field")
-        )
+        // Emerged input field
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = PureWhite,
+            shadowElevation = 4.dp,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = typed,
+                onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
+                label = { Text("Ketik kata bahasa Inggris...", color = SageGreen) },
+                enabled = !isAnswerChecked,
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.speakWord(question.correctAnswer) }) {
+                        ExpeditionIconSound(isEnabled = true, tint = DeepForestGreen, modifier = Modifier.size(18.dp))
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedBorderColor = DeepForestGreen,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedTextColor = DeepForestGreen,
+                    unfocusedTextColor = DeepForestGreen,
+                    focusedLabelColor = DeepForestGreen,
+                    unfocusedLabelColor = SageGreen
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("fill_blank_input_field")
+            )
+        }
 
         if (isAnswerChecked) {
             Text(
                 text = "Kunci Jawaban: ${question.correctAnswer}",
-                color = GoldYellow,
+                fontFamily = CinzelFontFamily,
+                color = DeepForestGreen,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -612,14 +819,16 @@ fun WordUnscrambleRenderer(
         Text(
             text = "Ketuk huruf di bawah untuk menyusun kata:",
             fontSize = 12.sp,
-            color = ExplorerCream
+            color = DeepForestGreen,
+            fontWeight = FontWeight.Medium
         )
 
         // Assembled Word Slots
         Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = Color(0xFF1B382B),
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow),
+            shape = RoundedCornerShape(12.dp),
+            color = PureWhite,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, DeepForestGreen),
+            shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -632,7 +841,7 @@ fun WordUnscrambleRenderer(
                 if (slots.isEmpty()) {
                     Text(
                         text = "Ketuk huruf-huruf di bawah...",
-                        color = Color.Gray,
+                        color = SageGreen,
                         fontSize = 13.sp
                     )
                 } else {
@@ -640,10 +849,11 @@ fun WordUnscrambleRenderer(
                         Surface(
                             onClick = { if (!isAnswerChecked) viewModel.removeScrambledLetter(idx) },
                             shape = RoundedCornerShape(8.dp),
-                            color = AdventureOrange,
+                            color = DeepForestGreen,
+                            shadowElevation = 2.dp,
                             modifier = Modifier
                                 .padding(horizontal = 3.dp)
-                                .size(36.dp)
+                                .size(40.dp)
                                 .testTag("scramble_slot_$idx")
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -651,7 +861,7 @@ fun WordUnscrambleRenderer(
                                     text = char,
                                     fontWeight = FontWeight.Black,
                                     fontSize = 18.sp,
-                                    color = Color.White
+                                    color = PureWhite
                                 )
                             }
                         }
@@ -660,7 +870,7 @@ fun WordUnscrambleRenderer(
             }
         }
 
-        // Shuffled Available Letter Tiles
+        // Shuffled Available Letter Tiles (Tactile Wooden/Brass Blocks)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -669,20 +879,20 @@ fun WordUnscrambleRenderer(
                 Surface(
                     onClick = { if (!isAnswerChecked) viewModel.pickScrambledLetter(id, char) },
                     shape = RoundedCornerShape(8.dp),
-                    color = DeepJungleGreen,
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow),
+                    color = SandGold,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, DeepForestGreen),
                     shadowElevation = 4.dp,
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
-                        .size(40.dp)
+                        .size(42.dp)
                         .testTag("letter_tile_$id")
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = char,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = Color.White
+                            fontSize = 18.sp,
+                            color = DeepForestGreen
                         )
                     }
                 }
@@ -695,9 +905,16 @@ fun WordUnscrambleRenderer(
                 onClick = { viewModel.resetScrambledLetters() },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Icon(Icons.Default.Refresh, contentDescription = null, tint = GoldYellow, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Ulangi Susunan", color = GoldYellow, fontSize = 12.sp)
+                ExpeditionIconReset(tint = DeepForestGreen, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "ULANGI SUSUNAN",
+                    fontFamily = CinzelFontFamily,
+                    color = DeepForestGreen,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp
+                )
             }
         }
     }
@@ -714,12 +931,11 @@ fun ImageVocabularyRenderer(
     onSpeak: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Visual Illustration Card
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF143326)),
-            border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
-            modifier = Modifier.fillMaxWidth()
+        // Visual Illustration Card (Dignified Explorer Specimen Sheet)
+        ParchmentDossierCard(
+            modifier = Modifier.fillMaxWidth(),
+            rotation = -0.5f,
+            backgroundColor = PureWhite
         ) {
             Column(
                 modifier = Modifier
@@ -727,16 +943,26 @@ fun ImageVocabularyRenderer(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = question.iconEmoji ?: "✨",
-                    fontSize = 52.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(68.dp)
+                        .background(SandGold.copy(alpha = 0.35f), CircleShape)
+                        .border(1.5.dp, DeepForestGreen, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpeditionIconCompass(
+                        tint = DeepForestGreen,
+                        accentTint = SandGold,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = question.subText ?: "",
                     fontSize = 13.sp,
-                    color = ExplorerCream,
-                    textAlign = TextAlign.Center
+                    color = DeepForestGreen,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -748,20 +974,21 @@ fun ImageVocabularyRenderer(
 
             Surface(
                 onClick = { if (!isAnswerChecked) onOptionSelected(opt) },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = when {
-                    isAnswerChecked && isCorrect -> SuccessGreen.copy(alpha = 0.35f)
-                    isAnswerChecked && isSelected && !isAnswerCorrect -> ErrorRed.copy(alpha = 0.35f)
-                    isSelected -> Color(0xFF285434)
-                    else -> SurfaceDark
+                    isAnswerChecked && isCorrect -> Color(0xFFE8F5E9)
+                    isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
+                    isSelected -> SandGold
+                    else -> PureWhite
                 },
+                shadowElevation = if (isSelected) 3.dp else 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
-                    1.5.dp,
+                    if (isSelected || isAnswerChecked) 2.dp else 1.5.dp,
                     when {
-                        isAnswerChecked && isCorrect -> SuccessGreen
-                        isAnswerChecked && isSelected && !isAnswerCorrect -> ErrorRed
-                        isSelected -> GoldYellow
-                        else -> ForestGreen.copy(alpha = 0.4f)
+                        isAnswerChecked && isCorrect -> Color(0xFF2D5A27) // Leaf green
+                        isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B) // Terracotta
+                        isSelected -> DeepForestGreen
+                        else -> SageGreen
                     }
                 ),
                 modifier = Modifier
@@ -772,21 +999,35 @@ fun ImageVocabularyRenderer(
                     modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = ('A' + idx).toString(),
-                        fontWeight = FontWeight.Bold,
-                        color = GoldYellow,
-                        modifier = Modifier.width(24.dp)
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isSelected) DeepForestGreen else SageGreen.copy(alpha = 0.2f),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = ('A' + idx).toString(),
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelected) PureWhite else DeepForestGreen,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = opt,
-                        color = Color.White,
+                        color = when {
+                            isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B)
+                            else -> DeepForestGreen
+                        },
                         fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         modifier = Modifier.weight(1f)
                     )
                     if (isAnswerChecked && isCorrect) {
-                        Icon(Icons.Default.Check, contentDescription = "Benar", tint = SuccessGreen)
+                        ExpeditionIconCheckmark(tint = Color(0xFF2D5A27), modifier = Modifier.size(18.dp))
+                    } else if (isAnswerChecked && isSelected && !isAnswerCorrect) {
+                        ExpeditionIconCross(tint = Color(0xFFA8422B), modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -810,20 +1051,21 @@ fun SentenceCompletionRenderer(
 
             Surface(
                 onClick = { if (!isAnswerChecked) onOptionSelected(opt) },
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = when {
-                    isAnswerChecked && isCorrect -> SuccessGreen.copy(alpha = 0.35f)
-                    isAnswerChecked && isSelected && !isAnswerCorrect -> ErrorRed.copy(alpha = 0.35f)
-                    isSelected -> Color(0xFF285434)
-                    else -> SurfaceDark
+                    isAnswerChecked && isCorrect -> Color(0xFFE8F5E9)
+                    isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
+                    isSelected -> SandGold
+                    else -> PureWhite
                 },
+                shadowElevation = if (isSelected) 3.dp else 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
-                    1.5.dp,
+                    if (isSelected || isAnswerChecked) 2.dp else 1.5.dp,
                     when {
-                        isAnswerChecked && isCorrect -> SuccessGreen
-                        isAnswerChecked && isSelected && !isAnswerCorrect -> ErrorRed
-                        isSelected -> GoldYellow
-                        else -> ForestGreen.copy(alpha = 0.4f)
+                        isAnswerChecked && isCorrect -> Color(0xFF2D5A27) // Leaf green
+                        isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B) // Terracotta
+                        isSelected -> DeepForestGreen
+                        else -> SageGreen
                     }
                 ),
                 modifier = Modifier
@@ -834,18 +1076,36 @@ fun SentenceCompletionRenderer(
                     modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = ('A' + idx).toString(),
-                        fontWeight = FontWeight.Bold,
-                        color = GoldYellow,
-                        modifier = Modifier.width(24.dp)
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isSelected) DeepForestGreen else SageGreen.copy(alpha = 0.2f),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = ('A' + idx).toString(),
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelected) PureWhite else DeepForestGreen,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = opt,
-                        color = Color.White,
+                        color = when {
+                            isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B)
+                            else -> DeepForestGreen
+                        },
                         fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
                     )
+                    if (isAnswerChecked && isCorrect) {
+                        ExpeditionIconCheckmark(tint = Color(0xFF2D5A27), modifier = Modifier.size(18.dp))
+                    } else if (isAnswerChecked && isSelected && !isAnswerCorrect) {
+                        ExpeditionIconCross(tint = Color(0xFFA8422B), modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }
@@ -872,32 +1132,41 @@ fun RemedialTaskContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp)
+            .padding(18.dp)
     ) {
-        // Remedial Banner
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF3E2723),
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, AdventureOrange),
-            modifier = Modifier.fillMaxWidth()
+        // Remedial Banner: Stamped Dossier Header
+        ParchmentDossierCard(
+            modifier = Modifier.fillMaxWidth(),
+            rotation = -0.5f,
+            backgroundColor = PureWhite
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "🛡️", fontSize = 24.sp)
-                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .background(SandGold, CircleShape)
+                        .border(1.dp, DeepForestGreen, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpeditionIconCompass(tint = DeepForestGreen, modifier = Modifier.size(24.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Misi Remedial Adaptif",
+                        text = "MISI PEMBETULAN JALUR",
+                        fontFamily = CinzelFontFamily,
                         fontWeight = FontWeight.Bold,
-                        color = GoldYellow,
-                        fontSize = 15.sp
+                        color = DeepForestGreen,
+                        fontSize = 13.sp,
+                        letterSpacing = 1.sp
                     )
                     Text(
-                        text = "Kuasai kata yang belum tepat untuk membuka jalan ke level berikutnya! (${state.currentRemedialIndex + 1}/$totalRemedials)",
-                        color = ExplorerCream,
-                        fontSize = 12.sp
+                        text = "Kuasai kata kunci untuk membuka kembali jalur peta (${state.currentRemedialIndex + 1}/$totalRemedials)",
+                        color = DeepForestGreen.copy(alpha = 0.85f),
+                        fontSize = 11.sp
                     )
                 }
             }
@@ -906,21 +1175,21 @@ fun RemedialTaskContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Remedial Question Card
-        Card(
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-            modifier = Modifier.fillMaxWidth()
+        ParchmentDossierCard(
+            modifier = Modifier.fillMaxWidth(),
+            rotation = 0.5f,
+            backgroundColor = PureWhite
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Text(
                     text = currentTask.question.prompt,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = DeepForestGreen
                 )
                 currentTask.question.subText?.let {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = it, color = ExplorerCream, fontSize = 13.sp)
+                    Text(text = it, color = DeepForestGreen.copy(alpha = 0.85f), fontSize = 13.sp)
                 }
             }
         }
@@ -934,20 +1203,21 @@ fun RemedialTaskContent(
 
             Surface(
                 onClick = { if (!state.isRemedialChecked) onOptionSelected(opt) },
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = when {
-                    state.isRemedialChecked && isCorrect -> SuccessGreen.copy(alpha = 0.35f)
-                    state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> ErrorRed.copy(alpha = 0.35f)
-                    isSelected -> Color(0xFF285434)
-                    else -> SurfaceDark
+                    state.isRemedialChecked && isCorrect -> PureWhite
+                    state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> PureWhite
+                    isSelected -> SandGold
+                    else -> PureWhite
                 },
+                shadowElevation = if (isSelected) 3.dp else 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
-                    1.5.dp,
+                    if (isSelected || state.isRemedialChecked) 2.dp else 1.5.dp,
                     when {
-                        state.isRemedialChecked && isCorrect -> SuccessGreen
-                        state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> ErrorRed
-                        isSelected -> GoldYellow
-                        else -> ForestGreen.copy(alpha = 0.4f)
+                        state.isRemedialChecked && isCorrect -> Color(0xFF2D5A27)
+                        state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> Color(0xFFA8422B)
+                        isSelected -> DeepForestGreen
+                        else -> SageGreen
                     }
                 ),
                 modifier = Modifier
@@ -959,13 +1229,30 @@ fun RemedialTaskContent(
                     modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isSelected) DeepForestGreen else SageGreen.copy(alpha = 0.2f),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = ('A' + idx).toString(),
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSelected) PureWhite else DeepForestGreen,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = ('A' + idx).toString(),
-                        fontWeight = FontWeight.Bold,
-                        color = GoldYellow,
-                        modifier = Modifier.width(24.dp)
+                        text = opt,
+                        color = when {
+                            state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> Color(0xFFA8422B)
+                            else -> DeepForestGreen
+                        },
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
                     )
-                    Text(text = opt, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 15.sp)
                 }
             }
         }
@@ -974,47 +1261,33 @@ fun RemedialTaskContent(
 
         // Action Buttons
         if (!state.isRemedialChecked) {
-            Button(
+            TactileSignpostButton(
+                label = "PERIKSA JAWABAN REMEDIAL",
                 onClick = onCheckAnswer,
                 enabled = state.remedialSelectedOption != null,
-                colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .testTag("remedial_check_button")
-            ) {
-                Text("Periksa Jawaban Remedial", fontWeight = FontWeight.Bold, color = Color.White)
-            }
+                testTag = "remedial_check_button",
+                modifier = Modifier.fillMaxWidth()
+            )
         } else if (state.isRemedialCorrect) {
-            Button(
+            TactileSignpostButton(
+                label = "LANJUT KE MATERI BERIKUTNYA",
                 onClick = onNextTask,
-                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .testTag("remedial_next_button")
-            ) {
-                Text("Lanjut ke Materi Berikutnya ➔", fontWeight = FontWeight.Bold, color = Color.White)
-            }
+                testTag = "remedial_next_button",
+                modifier = Modifier.fillMaxWidth()
+            )
         } else {
-            Button(
+            TactileSignpostButton(
+                label = "COBA LAGI",
                 onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .testTag("remedial_retry_button")
-            ) {
-                Text("Coba Lagi ↺", fontWeight = FontWeight.Bold, color = Color.White)
-            }
+                backgroundColor = Color(0xFFA8422B),
+                testTag = "remedial_retry_button",
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
-// Celebration Content
+// Celebration Content (Royal Surveyor's Certificate of Mastery)
 @Composable
 fun LevelCelebrationContent(
     state: QuizUiState,
@@ -1027,58 +1300,124 @@ fun LevelCelebrationContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "🎉", fontSize = 64.sp)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Level Selesai Dikuasai!",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Black,
-            color = GoldYellow,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Misi Stage ${state.stage}-${state.level} berhasil dituntaskan dengan gemilang.",
-            color = ExplorerCream,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center
-        )
+        ParchmentDossierCard(
+            modifier = Modifier.fillMaxWidth(),
+            rotation = 0f,
+            backgroundColor = PureWhite
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Stamped Star Wax Seal
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .background(SandGold, CircleShape)
+                        .border(2.dp, DeepForestGreen, CircleShape)
+                        .shadow(4.dp, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpeditionIconStarSeal(
+                        tint = DeepForestGreen,
+                        accentTint = PureWhite,
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
 
-        Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-        // Stars Row
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            repeat(3) { idx ->
-                val earned = idx < state.starsAwarded
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = if (earned) GoldYellow else Color.Gray.copy(alpha = 0.5f),
-                    modifier = Modifier.size(42.dp)
+                Text(
+                    text = "SERTIFIKAT WILAYAH",
+                    fontFamily = CinzelFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = SageGreen,
+                    letterSpacing = 2.sp
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Wilayah Berhasil Dikuasai!",
+                    fontFamily = CinzelFontFamily,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = DeepForestGreen,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Misi Stage ${state.stage}-${state.level} berhasil disurvei dan dicatat dalam jurnal kanonikal.",
+                    color = DeepForestGreen.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Stars Row: Hand-crafted Star Seals
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    repeat(3) { idx ->
+                        val earned = idx < state.starsAwarded
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .background(
+                                    if (earned) SandGold else Cream,
+                                    CircleShape
+                                )
+                                .border(
+                                    1.5.dp,
+                                    if (earned) DeepForestGreen else SageGreen.copy(alpha = 0.5f),
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ExpeditionIconStarSeal(
+                                tint = if (earned) DeepForestGreen else SageGreen.copy(alpha = 0.5f),
+                                accentTint = if (earned) PureWhite else Cream,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "${state.starsAwarded} DARI 3 BINTANG DIPEROLEH",
+                    fontFamily = CinzelFontFamily,
+                    color = DeepForestGreen,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.sp
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Primary Return Action directly inside the Dossier Card lower area
+                TactileSignpostButton(
+                    label = "KEMBALI KE PETA",
+                    onClick = onBackToMap,
+                    testTag = "celebration_card_back_button",
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "${state.starsAwarded}/3 Bintang Diperoleh",
-            color = GoldYellow,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
-        )
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(28.dp))
-
-        Button(
+        TactileSignpostButton(
+            label = "KEMBALI KE PETA PETUALANGAN",
             onClick = onBackToMap,
-            colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .testTag("celebration_continue_button")
-        ) {
-            Text("Kembali ke Peta Petualangan 🗺️", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-        }
+            testTag = "celebration_continue_button",
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

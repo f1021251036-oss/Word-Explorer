@@ -10,12 +10,15 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 sealed class GoogleAuthResult {
     data class Success(
-        val googleId: String,
+        val firebaseUid: String,
         val email: String,
         val displayName: String,
         val idToken: String
@@ -29,13 +32,28 @@ sealed class GoogleAuthResult {
 class GoogleSignInHelper(private val context: Context) {
 
     private val credentialManager = CredentialManager.create(context)
-    private val webClientId: String = System.getenv("GOOGLE_WEB_CLIENT_ID") ?: ""
+
+    fun getWebClientId(): String {
+        val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+        val fromResources = if (resId != 0) {
+            try { context.getString(resId) } catch (_: Exception) { "" }
+        } else ""
+
+        val fromEnv = System.getenv("GOOGLE_WEB_CLIENT_ID") ?: ""
+
+        // Primary: resource or env var; Fallback: genuine client_type 3 Web Client ID from google-services.json
+        return fromResources.ifBlank {
+            fromEnv.ifBlank {
+                "370424798110-1bvllhd3aoqine1scbrou94clcr11ekf.apps.googleusercontent.com"
+            }
+        }
+    }
 
     suspend fun signInWithGoogle(): GoogleAuthResult = withContext(Dispatchers.IO) {
+        val webClientId = getWebClientId()
         if (webClientId.isBlank()) {
             return@withContext GoogleAuthResult.ClientNotConfigured(
-                "GOOGLE_WEB_CLIENT_ID belum dikonfigurasi di secrets/environment. " +
-                "Untuk mengaktifkan Google OAuth resmi, tambahkan Web Client ID dari Google Cloud Console."
+                "GOOGLE_WEB_CLIENT_ID belum dikonfigurasi di secrets/environment atau google-services.json."
             )
         }
 
@@ -57,12 +75,19 @@ class GoogleSignInHelper(private val context: Context) {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 val email = googleIdTokenCredential.id
                 val displayName = googleIdTokenCredential.displayName ?: email.substringBefore("@")
-                val googleId = googleIdTokenCredential.idToken.take(32) // Unique account ID token slice
+                val idToken = googleIdTokenCredential.idToken
+
+                // Authenticate with Firebase Authentication
+                val firebaseAuth = FirebaseAuth.getInstance()
+                val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                val authResult = firebaseAuth.signInWithCredential(firebaseCredential).await()
+                val firebaseUid = authResult.user?.uid ?: idToken.take(32)
+
                 return@withContext GoogleAuthResult.Success(
-                    googleId = googleId,
+                    firebaseUid = firebaseUid,
                     email = email,
                     displayName = displayName,
-                    idToken = googleIdTokenCredential.idToken
+                    idToken = idToken
                 )
             } else {
                 return@withContext GoogleAuthResult.Error("Tipe kredensial tidak sesuai: ${credential.type}")

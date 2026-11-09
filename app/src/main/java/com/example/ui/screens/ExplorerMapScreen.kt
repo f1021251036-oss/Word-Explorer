@@ -60,14 +60,14 @@ fun ExplorerMapScreen(viewModel: WordExplorerViewModel) {
                 onTabSelected = { viewModel.currentAppScreen.value = it }
             )
         },
-        containerColor = DarkBackground
+        containerColor = DeepForestGreen
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Master 3D Adventure Island Map
+            // Master Adventure Island Map
             IsometricWorldMap(
                 path = selectedPath,
                 levels = levels,
@@ -84,12 +84,12 @@ fun ExplorerMapScreen(viewModel: WordExplorerViewModel) {
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Stage Progress Overview Banner (Floating Top Right)
+            // Stage Progress Overview Banner (Floating Top Right Parchment Badge)
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = DeepJungleGreen.copy(alpha = 0.92f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
-                shadowElevation = 6.dp,
+                color = PureWhite,
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
+                shadowElevation = 4.dp,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = 12.dp, top = 12.dp)
@@ -100,14 +100,14 @@ fun ExplorerMapScreen(viewModel: WordExplorerViewModel) {
                 ) {
                     Text(
                         text = "⭐ $totalStars Stars",
-                        color = GoldYellow,
+                        color = DeepForestGreen,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "🏆 $completedCount/50",
-                        color = ExplorerCream,
+                        color = DeepForestGreen,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
@@ -123,29 +123,29 @@ fun ExplorerMapScreen(viewModel: WordExplorerViewModel) {
             ) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = Color(0xF21E362A),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow),
-                    shadowElevation = 8.dp
+                    color = PureWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, DeepForestGreen),
+                    shadowElevation = 6.dp
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Lock, contentDescription = null, tint = GoldYellow, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = DeepForestGreen, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = "Batas Hari Ini: 3/3 Level Selesai! 🎉",
-                                color = GoldYellow,
+                                color = DeepForestGreen,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Timer, contentDescription = null, tint = ExplorerCream, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Default.Timer, contentDescription = null, tint = SageGreen, modifier = Modifier.size(12.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "Reset dalam: $timeUntilReset",
-                                    color = ExplorerCream,
+                                    color = DeepForestGreen,
                                     fontSize = 11.sp
                                 )
                             }

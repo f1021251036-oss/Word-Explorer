@@ -54,8 +54,23 @@ enum class QuestionType {
     FILL_BLANK,
     WORD_UNSCRAMBLE,
     IMAGE_VOCABULARY,
-    SENTENCE_COMPLETION
+    SENTENCE_COMPLETION,
+    // New Interactive Adventure Question Types
+    SCRAMBLED_LETTERS,
+    SENTENCE_BUILDER,
+    LISTEN_AND_TYPE,
+    PICTURE_TAP,
+    CATEGORY_SORT,
+    MEMORY_FLIP,
+    TRUE_OR_FALSE,
+    WORD_HUNT
 }
+
+data class PictureOption(
+    val id: String,
+    val vectorIconKey: String, // "compass" | "map" | "tree" | "tent" | "lantern" | "boots" | "backpack" | "branch"
+    val label: String
+)
 
 data class Question(
     val id: String,
@@ -66,10 +81,21 @@ data class Question(
     val correctAnswer: String,
     val explanation: String,
     val targetWord: String,
-    val matchingPairs: Map<String, String>? = null, // For Drag and Match: English -> Indonesian
+    val matchingPairs: Map<String, String>? = null, // For Drag and Match & Memory Flip: English -> Indonesian
     val iconEmoji: String? = null,                 // For Image-based vocabulary
-    val scrambledLetters: List<String>? = null,     // For Word Arrangement
-    val sentenceWithBlank: String? = null           // Contextual sentence
+    val scrambledLetters: List<String>? = null,     // For Word Arrangement / Scrambled Letters
+    val sentenceWithBlank: String? = null,          // Contextual sentence
+    val hint: String? = null,                       // Hint text for typing questions
+    val sentenceTokens: List<String>? = null,       // For Sentence Builder: Shuffled word chips
+    val orderedSentence: String? = null,           // For Sentence Builder: Expected sentence
+    val audioPromptWord: String? = null,           // For Listen and Type: Word spoken by TTS
+    val pictureOptions: List<PictureOption>? = null,// For Picture Tap: Vector illustrations
+    val isStatementTrue: Boolean? = null,          // For True or False: Expected boolean
+    val gridLetters: List<List<String>>? = null,   // For Word Hunt: 5x5 character grid
+    val clue: String? = null,                      // Task 7: Indirect function/characteristic clue in Indonesian
+    val clue2: String? = null,                     // Task 7: Deeper contextual hint + letter count
+    val hintsEnabled: Boolean = true,              // Task 7: Set to false on highest level
+    val failureFeedback: String? = null            // Task 2: Specific error feedback for sorting or wrong answer
 )
 
 data class LevelInfo(
@@ -118,7 +144,9 @@ data class VocabularyItem(
     val exampleTranslation: String,
     val cefr: String,
     val category: String,
-    val isLearned: Boolean = false
+    val isLearned: Boolean = false,
+    val clue: String = "",
+    val clue2: String = ""
 )
 
 data class CompanionAnimal(

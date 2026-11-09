@@ -26,10 +26,13 @@ class EmailDeliveryService {
 
     fun getBackendConfigStatus(): BackendConfigStatus {
         val smtpConfigured = smtpHost.isNotBlank() && smtpUsername.isNotBlank() && smtpPassword.isNotBlank()
-        val googleConfigured = googleClientId.isNotBlank()
+        val effectiveGoogleClientId = googleClientId.ifBlank {
+            "370424798110-1bvllhd3aoqine1scbrou94clcr11ekf.apps.googleusercontent.com"
+        }
+        val googleConfigured = effectiveGoogleClientId.isNotBlank()
         return BackendConfigStatus(
             googleOAuthClientIdConfigured = googleConfigured,
-            googleOAuthClientId = googleClientId.ifBlank { null },
+            googleOAuthClientId = effectiveGoogleClientId,
             smtpConfigured = smtpConfigured,
             smtpHost = smtpHost.ifBlank { null },
             smtpPort = smtpPort,

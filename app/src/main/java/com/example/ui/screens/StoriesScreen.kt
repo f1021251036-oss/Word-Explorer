@@ -55,7 +55,7 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                 onTabSelected = { viewModel.currentAppScreen.value = it }
             )
         },
-        containerColor = DarkBackground
+        containerColor = Cream
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -65,21 +65,22 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
         ) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = DeepJungleGreen,
-                border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
+                color = DeepForestGreen,
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, SandGold),
+                shadowElevation = 3.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "📖 Cerita Petualangan (Adventure Lore)",
                         fontWeight = FontWeight.Bold,
-                        color = GoldYellow,
+                        color = SandGold,
                         fontSize = 16.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Baca kisah penjelajahan di setiap wilayah peta, pelajari kosakata dalam konteks bacaan, dan selesaikan kuis pemahaman.",
-                        color = ExplorerCream,
+                        color = PureWhite,
                         fontSize = 13.sp
                     )
                 }
@@ -95,7 +96,9 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                     val isDone = completedStories.contains(story.id)
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                        colors = CardDefaults.cardColors(containerColor = PureWhite),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { viewModel.openStory(story) }
@@ -109,17 +112,11 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = when (story.region) {
-                                        "Green Forest" -> ForestGreen
-                                        "Lost Island" -> SeaBlue
-                                        "Ancient Ruins" -> Color(0xFFC49A45)
-                                        "Mountain Passage" -> StoneGray
-                                        else -> CrystalViolet
-                                    }
+                                    color = DeepForestGreen
                                 ) {
                                     Text(
                                         text = story.region,
-                                        color = Color.White,
+                                        color = SandGold,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -128,9 +125,9 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
 
                                 if (isDone) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = DeepForestGreen, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Selesai", color = Color(0xFFA5D6A7), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Text("Selesai", color = DeepForestGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -141,14 +138,14 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                                 text = story.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldYellow
+                                color = DeepForestGreen
                             )
 
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
                                 text = story.synopsis,
-                                color = ExplorerCream,
+                                color = DeepForestGreen.copy(alpha = 0.85f),
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp
                             )
@@ -163,13 +160,14 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                                 story.targetWords.take(4).forEach { word ->
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = Color(0xFF1E4637)
+                                        color = Cream,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen)
                                     ) {
                                         Text(
                                             text = word,
-                                            color = ExplorerCream,
+                                            color = DeepForestGreen,
                                             fontSize = 11.sp,
-                                            fontWeight = FontWeight.Medium,
+                                            fontWeight = FontWeight.SemiBold,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                         )
                                     }
@@ -210,7 +208,8 @@ fun StoryReaderDialog(
     Dialog(onDismissRequest = onClose) {
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = SurfaceDark,
+            color = Cream,
+            border = androidx.compose.foundation.BorderStroke(2.dp, DeepForestGreen),
             shadowElevation = 12.dp,
             modifier = Modifier
                 .fillMaxWidth()
@@ -231,10 +230,10 @@ fun StoryReaderDialog(
                         text = story.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = GoldYellow
+                        color = DeepForestGreen
                     )
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = ExplorerCream)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DeepForestGreen)
                     }
                 }
 
@@ -250,7 +249,7 @@ fun StoryReaderDialog(
                         Text(
                             text = paragraph,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
+                            color = DeepForestGreen,
                             lineHeight = 22.sp,
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
@@ -262,20 +261,21 @@ fun StoryReaderDialog(
                     firstQ?.let { question ->
                         Card(
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E4637)),
+                            colors = CardDefaults.cardColors(containerColor = PureWhite),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
                                     text = "Uji Pemahaman Bacaan:",
-                                    color = GoldYellow,
+                                    color = DeepForestGreen,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = question.prompt,
-                                    color = Color.White,
+                                    color = DeepForestGreen,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 14.sp
                                 )
@@ -293,19 +293,32 @@ fun StoryReaderDialog(
                                         },
                                         shape = RoundedCornerShape(8.dp),
                                         color = when {
-                                            quizAnswered && opt == question.correctAnswer -> SuccessGreen.copy(alpha = 0.4f)
-                                            quizAnswered && isSelected && !quizCorrect -> ErrorRed.copy(alpha = 0.4f)
-                                            isSelected -> Color(0xFF285434)
-                                            else -> Color(0xFF15382B)
+                                            quizAnswered && opt == question.correctAnswer -> PureWhite
+                                            quizAnswered && isSelected && !quizCorrect -> PureWhite
+                                            isSelected -> SandGold
+                                            else -> PureWhite
                                         },
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            if (isSelected || quizAnswered) 2.dp else 1.dp,
+                                            when {
+                                                quizAnswered && opt == question.correctAnswer -> DeepForestGreen
+                                                quizAnswered && isSelected && !quizCorrect -> SemanticRed
+                                                isSelected -> DeepForestGreen
+                                                else -> SageGreen
+                                            }
+                                        ),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
                                     ) {
                                         Text(
                                             text = opt,
-                                            color = Color.White,
+                                            color = when {
+                                                quizAnswered && isSelected && !quizCorrect -> SemanticRed
+                                                else -> DeepForestGreen
+                                            },
                                             fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
                                             modifier = Modifier.padding(10.dp)
                                         )
                                     }
@@ -315,7 +328,7 @@ fun StoryReaderDialog(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = if (quizCorrect) "✓ Jawaban Benar! Cerita Selesai." else "❌ Kurang tepat: ${question.explanation}",
-                                        color = if (quizCorrect) Color(0xFFA5D6A7) else Color(0xFFFF8A80),
+                                        color = if (quizCorrect) DeepForestGreen else SemanticRed,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp
                                     )
@@ -329,13 +342,16 @@ fun StoryReaderDialog(
 
                 Button(
                     onClick = onComplete,
-                    colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DeepForestGreen,
+                        contentColor = PureWhite
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(50.dp)
                 ) {
-                    Text("Tandai Cerita Telah Dibaca", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Tandai Cerita Telah Dibaca", fontWeight = FontWeight.Bold, color = PureWhite)
                 }
             }
         }

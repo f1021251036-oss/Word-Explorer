@@ -33,6 +33,28 @@ import com.example.ui.theme.*
 import com.example.ui.viewmodel.AuthScreenState
 import com.example.ui.viewmodel.WordExplorerViewModel
 
+/**
+ * Tactile 3D emerged input container with sculpted beveled rim and cast shadow
+ */
+@Composable
+fun EmergedInputFieldContainer(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = Color(0xFF143327), // Deep dark container background
+        shadowElevation = 8.dp, // Distinct 3D emerged shadow
+        border = androidx.compose.foundation.BorderStroke(
+            2.dp, // Distinct emerged outline shape for email, name, and password
+            Color(0xFF4A7D65) // Crisp raised border outline that emerges clearly from the surface
+        )
+    ) {
+        content()
+    }
+}
+
 @Composable
 fun AuthScreen(viewModel: WordExplorerViewModel) {
     val authState by viewModel.authScreenState.collectAsState()
@@ -77,8 +99,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                     .clip(RoundedCornerShape(20.dp))
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.img_explorer_world_1793115165361),
-                    contentDescription = "Word Explorer World",
+                    painter = painterResource(id = R.drawable.img_login_hero_adventure_1794230784519),
+                    contentDescription = "Word Explorer Adventure Realm",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -255,12 +277,12 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                 Text(
                                     text = "• Berlaku strictly 5 menit sejak dikirim\n• Maksimal 5 kali percobaan salah\n• Terikat pada akun kanonikal Word Explorer",
                                     fontSize = 11.sp,
-                                    color = ExplorerCream.copy(alpha = 0.85f)
+                                    color = ExplorerCream.copy(alpha = 0.95f)
                                 )
                             }
                         }
 
-                        // Sandbox Inspection Card (Discloses test code in sandbox if SMTP unconfigured)
+                        // Sandbox Inspection Card
                         if (!backendStatus.isReadyForRealSmtp && sentCode != null) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
@@ -286,30 +308,39 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                     Text(
                                         text = "Verifikasi tetap divalidasi server menggunakan enkripsi SHA-256.",
                                         fontSize = 10.sp,
-                                        color = ExplorerCream.copy(alpha = 0.7f)
+                                        color = ExplorerCream.copy(alpha = 0.85f)
                                     )
                                 }
                             }
                         }
 
-                        // 6-digit OTP code textfield
-                        OutlinedTextField(
-                            value = verificationCode,
-                            onValueChange = { if (it.length <= 6) viewModel.authVerificationCode.value = it.filter { ch -> ch.isDigit() } },
-                            label = { Text("Kode OTP (6-Digit)") },
-                            leadingIcon = { Icon(Icons.Default.Pin, contentDescription = null, tint = GoldYellow) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GoldYellow,
-                                unfocusedBorderColor = ForestGreen,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("auth_verification_code_field")
-                        )
+                        // 6-digit OTP code textfield with emerged outline container
+                        EmergedInputFieldContainer {
+                            OutlinedTextField(
+                                value = verificationCode,
+                                onValueChange = { if (it.length <= 6) viewModel.authVerificationCode.value = it.filter { ch -> ch.isDigit() } },
+                                label = { Text("Kode OTP (6-Digit)", color = ExplorerCream) },
+                                leadingIcon = { Icon(Icons.Default.Pin, contentDescription = null, tint = GoldYellow) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = GoldYellow,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedLabelColor = GoldYellow,
+                                    unfocusedLabelColor = ExplorerCream,
+                                    focusedLeadingIconColor = GoldYellow,
+                                    unfocusedLeadingIconColor = ExplorerCream
+                                ),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("auth_verification_code_field")
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -362,80 +393,107 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                     } else {
                         // --- SCREEN: Login / Register / ForgotPassword Form ---
 
-                        // Registration Display Name
+                        // Registration Display Name with emerged outline container
                         AnimatedVisibility(visible = authState == AuthScreenState.Register) {
                             Column {
-                                OutlinedTextField(
-                                    value = displayName,
-                                    onValueChange = { viewModel.authDisplayName.value = it },
-                                    label = { Text("Nama Lengkap Siswa") },
-                                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = ExplorerCream) },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = GoldYellow,
-                                        unfocusedBorderColor = ForestGreen,
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White
-                                    ),
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("auth_name_field")
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
+                                EmergedInputFieldContainer {
+                                    OutlinedTextField(
+                                        value = displayName,
+                                        onValueChange = { viewModel.authDisplayName.value = it },
+                                        label = { Text("Nama Lengkap Siswa", color = ExplorerCream) },
+                                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = ExplorerCream) },
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = GoldYellow,
+                                            unfocusedBorderColor = Color.Transparent,
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            focusedTextColor = Color.White,
+                                            unfocusedTextColor = Color.White,
+                                            focusedLabelColor = GoldYellow,
+                                            unfocusedLabelColor = ExplorerCream,
+                                            focusedLeadingIconColor = GoldYellow,
+                                            unfocusedLeadingIconColor = ExplorerCream
+                                        ),
+                                        singleLine = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .testTag("auth_name_field")
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(14.dp))
                             }
                         }
 
-                        // Email Field
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { viewModel.authEmail.value = it },
-                            label = { Text("Alamat Gmail Aktif") },
-                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = ExplorerCream) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GoldYellow,
-                                unfocusedBorderColor = ForestGreen,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("auth_email_field")
-                        )
+                        // Email Field with emerged outline container
+                        EmergedInputFieldContainer {
+                            OutlinedTextField(
+                                value = email,
+                                onValueChange = { viewModel.authEmail.value = it },
+                                label = { Text("Alamat Gmail Aktif", color = ExplorerCream) },
+                                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = ExplorerCream) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = GoldYellow,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedLabelColor = GoldYellow,
+                                    unfocusedLabelColor = ExplorerCream,
+                                    focusedLeadingIconColor = GoldYellow,
+                                    unfocusedLeadingIconColor = ExplorerCream
+                                ),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("auth_email_field")
+                            )
+                        }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Password Field
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { viewModel.authPassword.value = it },
-                            label = { Text(if (authState == AuthScreenState.ForgotPassword) "Kata Sandi Baru" else "Kata Sandi") },
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = ExplorerCream) },
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = "Toggle password visibility",
-                                        tint = ExplorerCream
-                                    )
-                                }
-                            },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GoldYellow,
-                                unfocusedBorderColor = ForestGreen,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("auth_password_field")
-                        )
+                        // Password Field with emerged outline container
+                        EmergedInputFieldContainer {
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = { viewModel.authPassword.value = it },
+                                label = { Text(if (authState == AuthScreenState.ForgotPassword) "Kata Sandi Baru" else "Kata Sandi", color = ExplorerCream) },
+                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = ExplorerCream) },
+                                trailingIcon = {
+                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                        Icon(
+                                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                            contentDescription = "Toggle password visibility",
+                                            tint = ExplorerCream
+                                        )
+                                    }
+                                },
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = GoldYellow,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedLabelColor = GoldYellow,
+                                    unfocusedLabelColor = ExplorerCream,
+                                    focusedLeadingIconColor = GoldYellow,
+                                    unfocusedLeadingIconColor = ExplorerCream
+                                ),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("auth_password_field")
+                            )
+                        }
 
-                        // Forgot Password Link
+                        // Forgot Password Link with visible GoldYellow text
                         if (authState == AuthScreenState.Login) {
                             TextButton(
                                 onClick = {
@@ -449,7 +507,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             ) {
                                 Text(
                                     "Lupa Kata Sandi?",
-                                    color = ExplorerCream,
+                                    color = GoldYellow,
+                                    fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
                             }
@@ -470,6 +529,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             enabled = !isLoading,
                             colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
                             shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow.copy(alpha = 0.8f)),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
@@ -511,7 +572,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFF285434))
                             Text(
                                 text = "  ATAU  ",
-                                color = ExplorerCream.copy(alpha = 0.6f),
+                                color = ExplorerCream.copy(alpha = 0.9f),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -545,6 +606,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             onClick = { viewModel.quickDemoLogin() },
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow.copy(alpha = 0.8f)),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 1.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
@@ -552,7 +615,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         ) {
                             Icon(Icons.Default.Explore, contentDescription = null, tint = GoldYellow)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Jelajahi Demo (Arka Explorer)", fontWeight = FontWeight.Bold)
+                            Text("Jelajahi Demo (Arka Explorer)", fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
@@ -577,11 +640,12 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Footer note
+            // Footer note with high-contrast text that never blends with the background
             Text(
                 text = "Dirancang untuk siswa SMP belajar kosakata bahasa Inggris dengan seru dan mandiri.",
-                color = ExplorerCream.copy(alpha = 0.7f),
-                fontSize = 11.sp,
+                color = Color(0xFFFFF2B4), // High-contrast Cream (100% opacity)
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             )
         }
@@ -595,7 +659,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         onClick = { viewModel.toggleBackendStatusDialog() },
                         colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange)
                     ) {
-                        Text("Tutup", fontWeight = FontWeight.Bold)
+                        Text("Tutup", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 },
                 title = {
@@ -697,7 +761,7 @@ private fun StatusItemRow(title: String, isConfigured: Boolean, details: String)
                 )
             }
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = details, fontSize = 11.sp, color = ExplorerCream.copy(alpha = 0.85f))
+            Text(text = details, fontSize = 11.sp, color = ExplorerCream.copy(alpha = 0.95f))
         }
     }
 }

@@ -274,11 +274,11 @@ fun IsometricWorldMap(
                         if (isCurrent) {
                             Canvas(modifier = Modifier.fillMaxSize()) {
                                 drawCircle(
-                                    color = GoldYellow.copy(alpha = pulseAlpha * 0.5f),
+                                    color = SandGold.copy(alpha = pulseAlpha * 0.5f),
                                     radius = (size.minDimension / 2f) * pulseScale
                                 )
                                 drawCircle(
-                                    color = AdventureOrange.copy(alpha = 0.85f),
+                                    color = DeepForestGreen.copy(alpha = 0.85f),
                                     radius = (size.minDimension / 2.2f) * pulseScale,
                                     style = Stroke(width = 2.5f)
                                 )
@@ -300,18 +300,18 @@ fun IsometricWorldMap(
                             },
                             shape = CircleShape,
                             color = when {
-                                isCurrent -> AdventureOrange
-                                isCompleted -> Color(0xFF2E7D32)
-                                isAvailable -> Color(0xFF1B5E20)
-                                else -> Color(0xCC202824)
+                                isCurrent -> SandGold
+                                isCompleted -> DeepForestGreen
+                                isAvailable -> Cream
+                                else -> SageGreen.copy(alpha = 0.35f)
                             },
                             border = androidx.compose.foundation.BorderStroke(
                                 width = if (isCurrent) 2.5.dp else 1.5.dp,
                                 color = when {
-                                    isCurrent -> GoldYellow
-                                    isCompleted -> Color(0xFFFFD54F)
-                                    isAvailable -> Color(0xFFA5D6A7)
-                                    else -> Color(0x669E9E9E)
+                                    isCurrent -> DeepForestGreen
+                                    isCompleted -> SandGold
+                                    isAvailable -> SageGreen
+                                    else -> SageGreen.copy(alpha = 0.6f)
                                 }
                             ),
                             shadowElevation = if (isCurrent) 8.dp else 3.dp,
@@ -325,7 +325,7 @@ fun IsometricWorldMap(
                                         Icon(
                                             imageVector = Icons.Default.Lock,
                                             contentDescription = "Locked Level ${level.stageNumber}-${level.levelNumber}",
-                                            tint = Color(0xFFCCCCCC),
+                                            tint = SageGreen,
                                             modifier = Modifier.size(13.dp)
                                         )
                                     }
@@ -338,7 +338,7 @@ fun IsometricWorldMap(
                                                 text = "${level.levelNumber}",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color.White
+                                                color = PureWhite
                                             )
                                         }
                                     }
@@ -347,7 +347,7 @@ fun IsometricWorldMap(
                                             text = "${level.levelNumber}",
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isCurrent) Color.White else Color(0xFFE8F5E9)
+                                            color = DeepForestGreen
                                         )
                                     }
                                 }
@@ -361,7 +361,7 @@ fun IsometricWorldMap(
                                     .align(Alignment.BottomCenter)
                                     .offset(y = 10.dp)
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(Color(0xD00A1F14))
+                                    .background(DeepForestGreen)
                                     .padding(horizontal = 3.dp, vertical = 1.dp)
                             ) {
                                 repeat(level.stars) {
@@ -387,8 +387,8 @@ fun IsometricWorldMap(
                         Surface(
                             onClick = { onLevelClick(level) },
                             shape = RoundedCornerShape(14.dp),
-                            color = AdventureOrange,
-                            border = androidx.compose.foundation.BorderStroke(2.dp, GoldYellow),
+                            color = DeepForestGreen,
+                            border = androidx.compose.foundation.BorderStroke(2.dp, SandGold),
                             shadowElevation = 8.dp,
                             modifier = Modifier
                                 .offset(
@@ -404,7 +404,7 @@ fun IsometricWorldMap(
                                 Icon(
                                     imageVector = Icons.Default.PlayArrow,
                                     contentDescription = "Play",
-                                    tint = Color.White,
+                                    tint = PureWhite,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(3.dp))
@@ -412,7 +412,7 @@ fun IsometricWorldMap(
                                     text = "PLAY",
                                     fontWeight = FontWeight.Black,
                                     fontSize = 12.sp,
-                                    color = Color.White
+                                    color = PureWhite
                                 )
                             }
                         }
@@ -444,18 +444,18 @@ fun IsometricWorldMap(
                         },
                         shape = RoundedCornerShape(12.dp),
                         color = when {
-                            !unlocked -> Color(0xD0182420)
-                            isCompleted -> Color(0xE0174A27)
-                            isActiveStage -> Color(0xE8D97D1A)
-                            else -> Color(0xDD243E33)
+                            !unlocked -> PureWhite.copy(alpha = 0.92f)
+                            isCompleted -> DeepForestGreen
+                            isActiveStage -> SandGold
+                            else -> Cream
                         },
                         border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
+                            1.5.dp,
                             when {
-                                !unlocked -> Color(0x66768E84)
-                                isCompleted -> GoldYellow
-                                isActiveStage -> Color(0xFFFFF0A6)
-                                else -> Color(0x8898B6AA)
+                                !unlocked -> SageGreen.copy(alpha = 0.7f)
+                                isCompleted -> SandGold
+                                isActiveStage -> DeepForestGreen
+                                else -> SageGreen
                             }
                         ),
                         shadowElevation = 5.dp,
@@ -477,7 +477,7 @@ fun IsometricWorldMap(
                                     text = region.name.uppercase(),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 10.sp,
-                                    color = Color.White
+                                    color = if (isCompleted) PureWhite else DeepForestGreen
                                 )
                                 Text(
                                     text = when {
@@ -488,7 +488,11 @@ fun IsometricWorldMap(
                                     },
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 8.sp,
-                                    color = if (!unlocked) Color.LightGray else GoldYellow
+                                    color = when {
+                                        !unlocked -> SageGreen
+                                        isCompleted -> SandGold
+                                        else -> DeepForestGreen
+                                    }
                                 )
                             }
                         }

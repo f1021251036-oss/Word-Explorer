@@ -38,8 +38,8 @@ fun RegionDetailSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = DeepJungleGreen,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = ExplorerCream) }
+        containerColor = Cream,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = DeepForestGreen) }
     ) {
         Column(
             modifier = Modifier
@@ -56,13 +56,13 @@ fun RegionDetailSheet(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(android.graphics.Color.parseColor(region.colorHex))
+                        color = DeepForestGreen
                     ) {
                         Text(
                             text = "${region.iconEmoji} Stage ${region.stageNumber}",
-                            fontWeight = FontWeight.Black,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
-                            color = Color.White,
+                            color = PureWhite,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
@@ -72,9 +72,9 @@ fun RegionDetailSheet(
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = when {
-                            !isUnlocked -> Color(0xFF495853)
-                            isAllCompleted -> Color(0xFF2E7D32)
-                            else -> GoldYellow
+                            !isUnlocked -> SageGreen.copy(alpha = 0.5f)
+                            isAllCompleted -> DeepForestGreen
+                            else -> SandGold
                         }
                     ) {
                         Text(
@@ -83,7 +83,11 @@ fun RegionDetailSheet(
                                 isAllCompleted -> "COMPLETED"
                                 else -> "ACTIVE"
                             },
-                            color = if (!isUnlocked || isAllCompleted) Color.White else Color(0xFF4A2C00),
+                            color = when {
+                                !isUnlocked -> PureWhite
+                                isAllCompleted -> SandGold
+                                else -> DeepForestGreen
+                            },
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -95,7 +99,7 @@ fun RegionDetailSheet(
                     onClick = onDismiss,
                     modifier = Modifier.testTag("close_region_sheet")
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = ExplorerCream)
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = DeepForestGreen)
                 }
             }
 
@@ -105,13 +109,13 @@ fun RegionDetailSheet(
             Text(
                 text = region.name,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-                color = GoldYellow
+                fontWeight = FontWeight.Bold,
+                color = DeepForestGreen
             )
             Text(
                 text = region.subtitle,
                 style = MaterialTheme.typography.titleMedium,
-                color = ExplorerCream,
+                color = DeepForestGreen.copy(alpha = 0.85f),
                 fontWeight = FontWeight.Medium
             )
 
@@ -121,7 +125,7 @@ fun RegionDetailSheet(
             Text(
                 text = region.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.9f),
+                color = DeepForestGreen,
                 lineHeight = 22.sp
             )
 
@@ -130,7 +134,8 @@ fun RegionDetailSheet(
             // Progression Summary Box
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = Color(0xFF1E4637),
+                color = PureWhite,
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -139,22 +144,22 @@ fun RegionDetailSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Levels Selesai", color = ExplorerCream.copy(alpha = 0.8f), fontSize = 12.sp)
-                        Text("$completedCount / 10", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Levels Selesai", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("$completedCount / 10", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Bintang Wilayah", color = ExplorerCream.copy(alpha = 0.8f), fontSize = 12.sp)
+                        Text("Bintang Wilayah", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("⭐", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("$totalStars / 30", color = GoldYellow, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("$totalStars / 30", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Status", color = ExplorerCream.copy(alpha = 0.8f), fontSize = 12.sp)
+                        Text("Status", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             text = if (isUnlocked) "Terbuka" else "Terkunci",
-                            color = if (isUnlocked) Color(0xFFA5D6A7) else Color(0xFFFF8A80),
+                            color = if (isUnlocked) DeepForestGreen else SemanticRed,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
@@ -172,14 +177,17 @@ fun RegionDetailSheet(
                         .fillMaxWidth()
                         .height(52.dp)
                         .testTag("enter_region_button"),
-                    colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DeepForestGreen,
+                        contentColor = PureWhite
+                    ),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Icon(Icons.Default.Explore, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Default.Explore, contentDescription = null, tint = PureWhite)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Masuki Wilayah ${region.name}",
-                        color = Color.White,
+                        color = PureWhite,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -187,18 +195,19 @@ fun RegionDetailSheet(
             } else {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF283B33),
+                    color = PureWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Lock, contentDescription = null, tint = GoldYellow)
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = DeepForestGreen)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = "Selesaikan seluruh 10 level pada wilayah sebelumnya untuk membuka ${region.name}.",
-                            color = ExplorerCream,
+                            color = DeepForestGreen,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
                         )

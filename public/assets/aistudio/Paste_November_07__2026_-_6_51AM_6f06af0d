@@ -1,0 +1,335 @@
+==================== MASTER BRIEF (READ THIS FIRST, COMPLETELY) ====================
+
+WHAT THIS DOCUMENT IS
+This is ONE long instruction document containing FIVE separate tasks (SECTION 1 to SECTION 5) for the same existing app. You must NOT do everything at once. You work on ONE section at a time, in the order given, and you wait for my approval between steps.
+
+ABOUT THE APP
+- An English-learning app with an adventure theme. It already exists and its core functionality works.
+- Existing features (lessons, quizzes, XP, streaks, levels, progress, navigation) must keep working at all times.
+- Your job is to improve the app through the five sections below. It is NOT a rewrite. Always edit the existing files. Never rebuild the project from scratch.
+
+THE FIVE SECTIONS AND THEIR ORDER
+1. SECTION 1: Interactive questions (10 vocabulary per level, many question types)
+2. SECTION 2: Exclusive visual design (colors, icons, layout, components, animation)
+3. SECTION 3: More enjoyable sounds (correct, wrong, rewards, UI)
+4. SECTION 4: Real Google login + email verification code
+5. SECTION 5: Exclusive login hero illustration (custom SVG)
+
+HOW YOU MUST WORK (GLOBAL RULES)
+G1. One section at a time. Do not start the next section until I write "Section X approved. Start SECTION Y, Step 1 only."
+G2. [STOP] means: end your reply, do not continue, do not write code for the next step, and wait for my message. Never assume approval.
+G3. Each section has a PROCESS list of steps. Do only the step I allow. When a section says "START with Step 1 only," do exactly that and then stop.
+G4. Rules written inside a section apply ONLY while you work on that section. Example: Section 1 says "do not change design" because during Section 1 you only handle question content. Section 2 later changes the design, and that is allowed. Section 2 will also restyle the new question components built in Section 1, and that is allowed. Section 4 adds a login page, and that is allowed. If two rules seem to conflict, the rule of the section currently active wins. If it is still unclear, ask me one short question.
+G5. Rules that ALWAYS apply in every section:
+   - Never break existing features: lessons, quiz flow, XP, streak, level, progress saving, navigation.
+   - Never rewrite the whole app. Edit existing files and keep the existing file structure unless a section explicitly needs a new file.
+   - Never put secrets (API keys, client secrets, tokens) in frontend code or in the repository. Use environment variables and provide a .env.example.
+   - Never use copyrighted assets (images, audio, fonts that are not free). Use Google Fonts (open license), inline SVG, and synthesized audio.
+   - Keep mobile-first layout, comfortable tap targets, keyboard accessibility, and WCAG AA text contrast.
+G6. Before changing any file in a step, first tell me which files you will touch. If the project has Git, remind me to commit a checkpoint before each section starts.
+G7. After EVERY reply, end with a short PROGRESS TRACKER in this format so we never lose our place:
+   "PROGRESS: Section [n], Step [n] done. Waiting for: [what I need to approve or answer]. Next: [next step]."
+G8. Output format: show only the code or data that changed (diffs or relevant snippets), not whole files, unless a new file is created. For every changed file, say in one or two sentences what changed and confirm that existing logic is untouched.
+G9. If something is ambiguous, missing (for example you cannot see a file), or needs my decision, ask ONE clear question and stop. Do not guess. Do not invent file contents. If you cannot see my code, say so and ask me to provide the file.
+G10. If a reply would be too long to fit, split it into parts and tell me "Part 1 of N, say 'continue'". Never silently cut code or skip steps.
+G11. Language: write explanations to me in the same language I write to you. Keep code, comments, and variable names in English. Keep learner-facing texts in the existing style of the app (including any Indonesian translations).
+
+GLOSSARY (so we use words the same way)
+- Vocabulary word: one adventure-themed English word taught in a lesson (for example compass, trail, summit).
+- Level: one lesson unit containing exactly 10 vocabulary words and its quiz.
+- Question type: the interaction format of a question (drag and match, fill in the blank, etc.).
+- Design tokens: CSS variables that hold colors, fonts, spacing, and shadows, defined in one place.
+- Signature concept: the single named visual idea that the whole design follows.
+- Scoring mechanism: the existing code that records correct/wrong answers and awards XP and streaks. New features must use it, not replace it.
+
+MANDATORY COLOR PALETTE (used in Sections 2, 4, and 5)
+- Deep Forest Green  #15370D -> dark surfaces, headers, primary buttons, main text
+- Sage Green         #728E6D -> borders, icons, progress track, secondary states, decoration
+- Sand Gold          #E5CD82 -> rewards, XP, streaks, badges, highlights, key actions
+- Cream              #FFF2B4 -> main background (parchment feel)
+- White              #FFFFFF -> clean surfaces, input fields, text on dark green
+Tints and shades of these are allowed for hover, pressed, and shadow states. For correct/wrong feedback use a leaf green and a muted terracotta in the same earthy family. No blue, purple, or neon.
+Contrast rules: Forest text on Cream/White/Sand. White or Cream text on Forest. Never use Sage for small text. Never put Sand text on Cream.
+
+START NOW: Begin SECTION 1, Step 1 only. Then stop and wait.
+
+
+==================== SECTION 1: INTERACTIVE QUESTIONS (10 VOCABULARY PER LEVEL) ====================
+
+ROLE
+You are an ESL curriculum designer and a senior front-end developer who builds game-like learning exercises.
+
+PROBLEM TO SOLVE
+Quiz questions currently use basic everyday words (apple, book, happy) that do not match the adventure vocabulary taught in the lessons, and most are multiple choice. I want to rebuild the question content AND add new interactive question types.
+
+RULES (active during Section 1)
+- Do not change business logic, navigation, authentication, or the progress/XP/streak scoring system. New question types must report results (correct/wrong, XP) through the SAME existing scoring mechanism.
+- You MAY add new question components. They must use the app's existing styling tokens so they look consistent. (Section 2 will restyle them later.)
+- Do not touch the visual design of existing screens during this section.
+- Do not rewrite the app from scratch. Edit existing files.
+- Stop at every [STOP] and wait for my approval.
+
+LEVEL STRUCTURE
+- Each level teaches exactly 10 unique vocabulary words, all adventure-themed.
+- No word repeats across levels.
+- If the current data has a different count per level, show me the problem first and propose a fix. Do not delete existing words without my approval.
+- Use the existing vocabulary where possible. Where a level has fewer than 10 words, propose new adventure words (with meaning and an example sentence) for my approval.
+
+QUESTION TYPES (multiple choice must be at most 15% of all questions)
+1. Drag and match: drag a word to its meaning, picture, or definition
+2. Fill in the blank: TYPE the missing word into an adventure sentence (accept minor case differences, and show a hint button)
+3. Scrambled letters: rearrange letters into the vocabulary word
+4. Sentence builder: tap word chips to build a correct sentence in order
+5. Listen and type: play the word with the browser's speech synthesis, user types what they hear
+6. Picture tap: tap the correct icon/illustration among several (use inline SVG, not external images)
+7. Category sort: drag words into buckets (e.g., "Camping gear" vs "Landscape")
+8. Memory flip: match word cards with meaning cards
+9. True or false: a short statement, swipe or tap
+10. Word hunt: find hidden vocabulary words in a small letter grid (use sparingly)
+11. Multiple choice: only as a minor filler
+
+LEVEL FLOW (per level)
+- 12 to 15 questions that cover all 10 words, each word tested at least twice in DIFFERENT formats.
+- Mix types so the same type never appears twice in a row.
+- Easier recognition types first (match, picture tap), harder production types later (typing, sentence builder).
+- Wrong answers show the correct answer with a short explanation, and the missed word is re-queued once at the end of the level.
+
+WRITING QUALITY
+- Sentences use adventure context (hiking, camping, navigation, treasure hunting, survival) with simple, natural grammar.
+- Distractors are other adventure words, plausible but clearly wrong. Exactly one correct answer.
+- Don't leak answers through the sentence or option length.
+- Vary the position of the correct answer.
+- Keep any Indonesian explanations/translations in the existing style.
+
+TECHNICAL
+- Define a question data schema that supports all types. Keep it backward compatible, or write a small migration for the old format.
+- Support touch and mouse for drag interactions, plus a tap-to-select fallback for accessibility.
+- Mobile-first, keyboard accessible, no layout shift.
+
+PROCESS
+Step 1: Audit current vocabulary, levels, and questions. Report words per level, off-topic questions, and the share of multiple choice. Change no code. [STOP]
+Step 2: Propose the new schema, the full list of 10 words for Level 1, and one sample question of each type. Change no code. [STOP]
+Step 3: Build the new components and the complete Level 1. [STOP]
+Step 4: After my approval, produce the remaining levels one at a time, stopping after each level.
+Step 5: Final report: a coverage table (each word, number of questions, formats used) and confirmation that scoring still works. [STOP]
+
+Show only changed code and data. If anything is ambiguous, ask.
+
+
+==================== SECTION 2: EXCLUSIVE VISUAL DESIGN ====================
+(Start only after I write "Section 1 approved. Start SECTION 2, Step 1 only.")
+
+ROLE
+You are an award-winning art director and front-end developer known for distinctive, unforgettable app identities. You hate template-looking UI.
+
+PROBLEM TO SOLVE
+The app looks generic and mass-market. I want an EXCLUSIVE, ownable visual identity, something a user would recognize from a screenshot alone. This includes the new question components from Section 1.
+
+WHAT YOU MAY CHANGE (be bold here)
+- Colors, typography, spacing, layout composition, and the visual structure of every screen
+- Markup, class names, and component structure, as needed to achieve the design
+- All icons and illustrations (replace them completely)
+- Animations, textures, borders, shapes, and micro-copy tone
+
+WHAT YOU MUST NOT CHANGE
+- Business logic, state management, navigation flow, function names, data structures, quiz content, or features
+- Do not add or remove pages or features
+- Do not rewrite the app from scratch; edit the existing files
+
+ANTI-GENERIC RULES (this is the core of the task)
+Do NOT use any of the following:
+- Emoji or stock icon libraries (Font Awesome, Lucide, Material icons) as the main icon language
+- White rounded cards with soft gray shadows in a plain grid
+- Gradient buttons, glassmorphism, or default Bootstrap/Tailwind-looking components
+- Inter, Roboto, Arial, or system fonts as the main look
+- Centered, symmetrical, "SaaS landing page" layouts
+Every screen should pass this test: "Could this be mistaken for a template?" If yes, redesign it.
+
+COLORS
+Use exactly the MANDATORY COLOR PALETTE from the Master Brief. Define as CSS variables (--forest, --sage, --sand, --cream, --white) in one place.
+
+DESIGN DIRECTION: CREATE A SIGNATURE CONCEPT
+1. Pick ONE strong concept and give it a name (for example: "Explorer's Field Journal": aged paper, ink stamps, wax seals, hand-drawn route lines, pinned map pages). Apply it everywhere; do not mix styles.
+2. Create 3 signature elements that appear throughout the app, for example: a stamp-style badge for completed lessons, a hand-drawn dotted trail for progress, a compass rose as the loading and level indicator.
+3. Break the grid on purpose: use asymmetry, overlapping layers, slightly rotated elements (1-2 degrees), torn or scalloped edges, and organic shapes where it fits the concept.
+
+CUSTOM ICON SET
+- Draw a complete custom icon set as inline SVG, in ONE consistent style (same stroke width, corner style, and level of detail).
+- Cover at minimum: compass, map, tent, mountain, campfire, key, treasure chest, flag, backpack, lantern, plus icons for XP, streak, level, lock, and checkmark.
+- Use only the palette colors. No external images or icon fonts.
+- Make the icons feel hand-crafted and characterful, not geometric and corporate.
+
+TYPOGRAPHY
+- One display font with adventure personality (e.g., an old-style serif or a rugged, slightly vintage face) for titles and numbers
+- One highly readable text font for body copy and quiz content
+- Establish a clear scale and use size, weight, and letter-spacing to create hierarchy. Load from Google Fonts only.
+
+TEXTURE AND DEPTH
+- Subtle paper grain using an inline SVG noise filter (feTurbulence) or CSS, not an external image
+- Layered shadows, inked or double borders, stamped edges, and slight imperfections so it feels tactile, not flat
+
+COMPONENTS (redesign all of them, including the Section 1 question types)
+- Buttons: chunky, tactile, with a clear pressed state (like a physical stamp or wooden sign)
+- Lesson cards: map sheets, journal pages, or badges, not generic cards
+- Progress: a winding trail with waypoint markers instead of a straight bar
+- Quiz answers and interactive questions (drag and match, scrambled letters, sentence builder, memory flip, etc.): styled to fit the concept, with satisfying selected, correct, and wrong states
+- Inputs, modals, and navigation: all matching the concept
+
+GAMIFICATION VISUALS
+- XP, streaks, levels, and badges should feel like collectible rewards using Sand Gold: seals, medals, glints, "unlocked" reveal animations
+- Locked items should look genuinely locked (faded, sealed, with a lock icon), not just grayed out
+
+MOTION
+- 150-400ms, purposeful animations: page transitions like turning a page, a stamp-down effect on completion, sparkles in palette colors on correct answers, a gentle shake on wrong answers, hover and tap feedback
+- Respect prefers-reduced-motion
+
+MICRO-COPY
+- Light adventure tone for labels, empty states, and success/failure messages, as long as the functional meaning stays identical
+
+TECHNICAL
+- Mobile-first, comfortable tap targets, WCAG AA contrast
+- Keep file structure intact; put all tokens in one place
+
+PROCESS
+Step 1: Review my code and screenshot. In at most 5 points, explain why the current design feels generic. Change no code.
+Step 2: Present your design concept: its name, the 3 signature elements, font pairing, how each palette color is used, and a text description of how the home screen will look. Change no code. [STOP]
+Step 3: Apply to the HOME SCREEN ONLY, including the new icon set and core components. [STOP]
+Step 4: After my approval, apply the same system to the remaining screens (including the quiz screens), one screen at a time, stopping after each. [STOP]
+Step 5: Final pass for animations and details. [STOP]
+
+For every file you change, state what changed visually and confirm the logic is untouched. Show only the changed code. If something is ambiguous, ask.
+
+
+==================== SECTION 3: MORE ENJOYABLE CORRECT/WRONG SOUNDS ====================
+(Start only after I write "Section 2 approved. Start SECTION 3, Step 1 only.")
+
+ROLE
+You are a game sound designer and a front-end developer.
+
+PROBLEM TO SOLVE
+The current correct/wrong sounds are generic. I want audio that feels playful, rewarding, and tied to the adventure world.
+
+RULES (active during Section 3)
+- Change only the audio layer and the minimal code needed to trigger sounds. Do not change logic, scoring, or design.
+- Do not use copyrighted audio. Either synthesize sounds with the Web Audio API (preferred, no files needed) or use clearly royalty-free assets and tell me the license.
+- Stop at every [STOP].
+
+SOUND DIRECTION (adventure, warm, organic)
+- Correct: a bright, short, wooden marimba or kalimba arpeggio, like a coin-and-chime reward (about 300 to 500 ms), going upward in pitch
+- Correct streak/combo: the same motif rising a step higher with each consecutive correct answer (up to 5 steps), plus a small sparkle on top
+- Wrong: soft and non-punishing, such as a low wooden "thunk" or a gentle descending two-note "oops" (under 400 ms). No harsh buzzers or sad trombones. It should make the user want to retry, not feel bad.
+- Level complete: a short triumphant fanfare with a treasure-chest-opening feel and glints
+- Badge/achievement unlock: a magical shimmer and a bell
+- Streak milestone: a warm campfire-crackle plus a chime
+- UI taps: very subtle wooden click (button press) and a paper-flip sound (page transitions)
+- Drag and drop: a soft pick-up sound and a satisfying snap when dropped in the right place
+- Every sound must feel like it belongs to the same instrument family and the same musical key, so they sound cohesive together.
+- Make sure every new question type from Section 1 has fitting sounds (typing correct/wrong, card flip, chip tap, word found).
+
+TECHNICAL
+- Create one audio module (e.g., soundManager) with a simple API: play('correct'), play('wrong'), play('combo', level), etc. Components only call this API.
+- Handle browser autoplay rules: unlock the AudioContext on the first user gesture.
+- Add a mute toggle and a volume slider in settings, saved in the existing settings store (or localStorage if none exists).
+- Respect prefers-reduced-motion by lowering intensity, not removing sounds, unless muted.
+- Keep sounds short and normalized in volume so none is louder than the others.
+- Add light haptic feedback (navigator.vibrate) on mobile for wrong and correct, with a setting to turn it off.
+- No audio overlap glitches: allow rapid taps without clipping or crashing.
+
+PROCESS
+Step 1: Find where the current sounds are triggered and list the files. Change no code. [STOP]
+Step 2: Describe the sound palette in words (instrument, notes, duration per sound) and propose the API. Change no code. [STOP]
+Step 3: Implement the module and replace only the correct/wrong sounds first. [STOP so I can test]
+Step 4: Add the remaining sounds, the settings controls, and haptics. [STOP]
+
+Show only changed code. Confirm logic and scoring are untouched.
+
+
+==================== SECTION 4: REAL GOOGLE LOGIN + EMAIL VERIFICATION CODE ====================
+(Start only after I write "Section 3 approved. Start SECTION 4, Step 1 only.")
+
+ROLE
+You are a senior full-stack engineer specialized in authentication and security.
+
+IMPORTANT FACT (do not get this wrong)
+"Continue with Google" (OAuth) does NOT send a verification code by email. Google verifies identity on its own sign-in page (password, 2-step verification). A code sent to an email is a SEPARATE mechanism (email OTP). That is why this section builds BOTH methods, and they must not be confused or merged into one fake flow.
+
+GOAL
+Add REAL authentication with two methods:
+A) "Continue with Google" (real Google OAuth, no fake or simulated login)
+B) "Sign in with email code": the user enters an email, a 6-digit verification code is actually sent to that inbox, and the user enters it to log in
+
+RULES (active during Section 4)
+- Do not change the learning logic, quiz content, or scoring. This section adds a login page and an auth layer, which is allowed. The login UI must follow the design system created in Section 2 (its tokens, fonts, icons, components).
+- No secrets (client secrets, API keys, service account keys) in frontend code or in the repository. Use environment variables and give me a .env.example.
+- Do not rewrite the app. Add the auth layer and connect it to the existing user/progress data.
+- Stop at every [STOP].
+
+FIRST: INSPECT MY STACK
+Check whether the app has a backend. If it is frontend-only, recommend the simplest secure option (for example Firebase Authentication, which supports Google sign-in and email link/code flows) and explain why. Wait for my choice. [STOP]
+
+METHOD A: GOOGLE SIGN-IN
+- Use Google Identity Services or Firebase Auth with the Google provider.
+- Verify the Google ID token on the SERVER (or via the Firebase SDK). Never trust a token decoded only on the client.
+- Read email, name, and profile picture, and require email_verified = true.
+- Create the user on first login, and reuse the account on later logins (match by Google user ID/sub, not by email alone).
+
+METHOD B: EMAIL VERIFICATION CODE
+- The user enters an email. Validate the format, then send a real email through a transactional email provider (Resend, SendGrid, Postmark, or Firebase). Tell me which provider you picked and why.
+- Code: 6 digits, cryptographically random, valid for 10 minutes, single use.
+- Store only a HASH of the code on the server, never the plain code.
+- Security: rate limit sends (e.g., max 3 per email per 15 minutes and per IP), limit verification attempts (max 5, then invalidate the code), use constant-time comparison, and keep error messages generic so they don't reveal whether an account exists.
+- Resend button with a 60-second cooldown timer, and a clear "check your spam folder" hint.
+- The email template follows the adventure theme (use the palette from the Master Brief), with the code large and readable and a plain-text fallback included.
+- If both methods use the same email, link them to ONE account.
+
+SESSIONS AND ACCOUNT
+- Secure sessions (httpOnly, secure, sameSite cookies, or Firebase session handling). Logout works everywhere, and protected routes redirect to login.
+- If the app currently stores progress locally or as a guest, migrate that progress to the account on first login (ask the user to confirm with a friendly prompt).
+- Show the user's name and avatar in the profile area.
+
+LOGIN UI STATES
+Loading, error (wrong or expired code, network error, popup blocked), success, and resend. Everything accessible (labels, focus order, keyboard, OTP input with autofill support via autocomplete="one-time-code" and paste support).
+
+SETUP GUIDE FOR ME (write step by step, in simple language)
+- How to create the Google Cloud project, configure the OAuth consent screen, create the OAuth Client ID, and set authorized JavaScript origins and redirect URIs for both localhost and my production domain
+- How to set up the email provider and verify my sending domain (SPF/DKIM)
+- The exact environment variables to fill in, and how to test each method end to end
+- A note that while the OAuth consent screen is in "Testing" mode, only the test users I add can log in, and what to do to publish it
+
+PROCESS
+Step 1: Inspect my stack and recommend an architecture. Change no code. [STOP]
+Step 2: Implement Method A end to end plus the setup guide. [STOP so I can test]
+Step 3: Implement Method B end to end. [STOP so I can test]
+Step 4: Session handling, progress migration, and the profile UI. [STOP]
+Step 5: Security checklist review, listing what was done and any remaining risks. [STOP]
+
+Show only changed code. Confirm that quiz and scoring logic is untouched. If anything is ambiguous, ask.
+
+
+==================== SECTION 5: EXCLUSIVE LOGIN HERO ILLUSTRATION (NO "AI SLOP") ====================
+(Start only after I write "Section 4 approved. Start SECTION 5.")
+
+TASK
+Replace the hero image at the top of the login screen with a custom inline SVG illustration (no external images, no AI-generated bitmap). The old image looked like generic AI-generated art; the new one must feel hand-made and ownable.
+
+STYLE AND COLORS
+- Style: linocut / risograph poster. Use only these colors: #15370D, #728E6D, #E5CD82, #FFF2B4, #FFFFFF.
+- Composition: a small explorer silhouette seen from behind on a ridge, layered mountain ranges, a large low sun, a dotted winding trail, a small tent with a thin line of smoke.
+- Use bold flat shapes, slightly irregular edges, an feTurbulence paper-grain overlay, and a subtle misregistration offset on one color layer.
+- Asymmetrical, with the horizon on the lower third and quiet space at the top for the title.
+- Do NOT use: glow, lens flare, gradients that look airbrushed, text inside the image, faces, or crowded details. Keep it simple and characterful.
+
+MOTION AND RESPONSIVENESS
+- Add a gentle parallax or slow drift animation on the layers (respect prefers-reduced-motion).
+- Make it responsive for small phones up to desktop, without distortion.
+
+RULES
+- Do not change any login logic. Only replace the illustration and adjust its container if needed.
+- It must match the design system from Section 2.
+
+PROCESS
+Step 1: Describe in words how the illustration will look (layers, shapes, where each element sits). Change no code. [STOP]
+Step 2: Implement the SVG in the login screen. [STOP]
+Step 3: Apply my revisions if any.
+
+When all sections are done, give a final summary: what was changed per section, what was intentionally left untouched, and how I can compare before and after.

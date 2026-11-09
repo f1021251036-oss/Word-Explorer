@@ -2,6 +2,7 @@ package com.example.data.repository
 
 import com.example.data.auth.EmailDeliveryResult
 import com.example.data.auth.EmailDeliveryService
+import com.example.data.firestore.*
 import com.example.data.local.*
 import com.example.data.models.*
 import com.example.data.seed.InitialDataSeed
@@ -16,7 +17,8 @@ class WordExplorerRepository(
     private val userDao: UserDao,
     private val progressDao: ProgressDao,
     private val vocabularyDao: VocabularyDao,
-    private val emailDeliveryService: EmailDeliveryService = EmailDeliveryService()
+    private val emailDeliveryService: EmailDeliveryService = EmailDeliveryService(),
+    val firestoreRepository: WordExplorerFirestoreRepository? = null
 ) {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
@@ -43,6 +45,7 @@ class WordExplorerRepository(
         val existingByGoogleId = userDao.getUserByGoogleId(googleId)
         if (existingByGoogleId != null) {
             userDao.saveSession(UserSessionEntity(userId = existingByGoogleId.id, authMethod = "google"))
+            syncCloudUserAndRestore(existingByGoogleId)
             return Result.success(existingByGoogleId)
         }
 
@@ -61,11 +64,12 @@ class WordExplorerRepository(
             )
             userDao.insertUser(linkedUser)
             userDao.saveSession(UserSessionEntity(userId = linkedUser.id, authMethod = "google"))
+            syncCloudUserAndRestore(linkedUser)
             return Result.success(linkedUser)
         }
 
         // New student registering via Google OAuth
-        val newUserId = "user_g_${UUID.randomUUID().toString().take(8)}"
+        val newUserId = googleId.ifBlank { "user_g_${UUID.randomUUID().toString().take(8)}" }
         val newUser = UserEntity(
             id = newUserId,
             email = cleanEmail,
@@ -93,7 +97,121 @@ class WordExplorerRepository(
         initializePathLevels(newUserId, LearningPath.LOW)
 
         userDao.saveSession(UserSessionEntity(userId = newUserId, authMethod = "google"))
+        syncCloudUserAndRestore(newUser)
         return Result.success(newUser)
+    }
+
+    suspend fun syncCloudUserAndRestore(user: UserEntity) {
+        val fs = firestoreRepository ?: return
+        try {
+            val profile = userDao.getUserProfile(user.id)
+            val currentPath = profile?.currentPath ?: "LOW"
+
+            // Check if user has progress in cloud
+            val cloudProgress = fs.getLearningProgress(user.id).getOrNull()
+            if (cloudProgress != null && cloudProgress.completedLevels.isNotEmpty()) {
+                // Restore completed levels
+                for (lvlId in cloudProgress.completedLevels) {
+                    val parts = lvlId.split("-")
+                    val stg = parts.getOrNull(0)?.toIntOrNull() ?: 1
+                    val lvl = parts.getOrNull(1)?.toIntOrNull() ?: 1
+                    progressDao.insertLevelProgress(
+                        LevelProgressEntity(
+                            id = "${user.id}_${currentPath}_$lvlId",
+                            userId = user.id,
+                            path = currentPath,
+                            levelId = lvlId,
+                            stageNumber = stg,
+                            levelNumber = lvl,
+                            status = LevelStatus.COMPLETED.name,
+                            stars = 3,
+                            firstAttemptScore = 10,
+                            completedAt = System.currentTimeMillis()
+                        )
+                    )
+                }
+                for (lvlId in cloudProgress.unlockedLevels) {
+                    val parts = lvlId.split("-")
+                    val stg = parts.getOrNull(0)?.toIntOrNull() ?: 1
+                    val lvl = parts.getOrNull(1)?.toIntOrNull() ?: 1
+                    val existing = progressDao.getLevelProgress(user.id, currentPath, lvlId)
+                    if (existing == null) {
+                        progressDao.insertLevelProgress(
+                            LevelProgressEntity(
+                                id = "${user.id}_${currentPath}_$lvlId",
+                                userId = user.id,
+                                path = currentPath,
+                                levelId = lvlId,
+                                stageNumber = stg,
+                                levelNumber = lvl,
+                                status = LevelStatus.AVAILABLE.name,
+                                stars = 0,
+                                firstAttemptScore = 0
+                            )
+                        )
+                    }
+                }
+            } else {
+                // Push local profile to cloud
+                fs.saveUserProfile(
+                    FirestoreUser(
+                        uid = user.id,
+                        displayName = user.displayName,
+                        email = user.email,
+                        authProviders = user.authProviders,
+                        learningPathway = currentPath
+                    )
+                )
+                syncProgressToCloud(user.id, LearningPath.valueOf(currentPath))
+            }
+
+            // Sync daily activity
+            val today = getTodayDateString()
+            val cloudActivity = fs.getDailyActivity(today, user.id).getOrNull()
+            if (cloudActivity != null && cloudActivity.adventureLevelsCompleted > 0) {
+                val localCount = progressDao.getDailyLevelCompletions(user.id, today).size
+                if (localCount < cloudActivity.adventureLevelsCompleted) {
+                    for (i in (localCount + 1)..cloudActivity.adventureLevelsCompleted) {
+                        progressDao.insertDailyLevelCompletion(
+                            DailyLevelCompletionEntity(
+                                id = "${user.id}_${today}_cloud_$i",
+                                userId = user.id,
+                                dateString = today,
+                                path = currentPath,
+                                levelId = "cloud-$i",
+                                completedAt = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Offline fallback
+        }
+    }
+
+    suspend fun syncProgressToCloud(userId: String, path: LearningPath) {
+        val fs = firestoreRepository ?: return
+        try {
+            val allProgress = progressDao.getProgressForPath(userId, path.code)
+            val completed = allProgress.filter { it.status == LevelStatus.COMPLETED.name }.map { it.levelId }
+            val unlocked = allProgress.filter { it.status != LevelStatus.LOCKED.name }.map { it.levelId }
+            val totalStars = allProgress.sumOf { it.stars }
+            val maxStage = allProgress.filter { it.status == LevelStatus.COMPLETED.name }.maxOfOrNull { it.stageNumber } ?: 1
+            val maxLevel = allProgress.filter { it.status == LevelStatus.COMPLETED.name }.maxOfOrNull { it.levelNumber } ?: 1
+
+            fs.saveLearningProgress(
+                FirestoreLearningProgress(
+                    currentChapter = maxStage,
+                    currentLevel = maxLevel,
+                    completedLevels = completed,
+                    unlockedLevels = unlocked.ifEmpty { listOf("1-1") },
+                    totalStars = totalStars,
+                    totalCompletedLevels = completed.size
+                )
+            )
+        } catch (_: Exception) {
+        }
     }
 
     // 2. Email & Password Registration with Secure SHA-256 Hashed 6-Digit OTP (5-Min Expiry)
@@ -646,6 +764,55 @@ class WordExplorerRepository(
         }
 
         updateStudyStreak(userId)
+
+        // Sync to Cloud Firestore
+        firestoreRepository?.let { fs ->
+            try {
+                val allProgress = progressDao.getProgressForPath(userId, path.code)
+                val completed = allProgress.filter { it.status == LevelStatus.COMPLETED.name }.map { it.levelId }
+                val unlocked = allProgress.filter { it.status != LevelStatus.LOCKED.name }.map { it.levelId }
+                val totalStars = allProgress.sumOf { it.stars }
+
+                fs.saveLearningProgress(
+                    FirestoreLearningProgress(
+                        currentChapter = stage,
+                        currentLevel = level,
+                        completedLevels = completed,
+                        unlockedLevels = unlocked,
+                        totalStars = totalStars,
+                        totalCompletedLevels = completed.size
+                    )
+                )
+
+                val today = getTodayDateString()
+                val dailyLevels = progressDao.getDailyLevelCompletions(userId, today).size
+                val dailyAssignments = vocabularyDao.getDailyAssignments(userId, today)
+                val masteredCount = dailyAssignments.count { it.status == "MASTERED" }
+
+                fs.saveDailyActivity(
+                    FirestoreDailyActivity(
+                        date = today,
+                        vocabularyCompleted = masteredCount,
+                        adventureLevelsCompleted = minOf(3, dailyLevels),
+                        dailyTargetCompleted = masteredCount >= (dailyAssignments.size.takeIf { it > 0 } ?: 10),
+                        streakQualified = dailyLevels > 0
+                    )
+                )
+
+                fs.saveQuizResult(
+                    resultId = "${levelId}_${System.currentTimeMillis()}",
+                    quizResult = FirestoreQuizResult(
+                        chapter = stage,
+                        level = level,
+                        score = (score * 10).coerceIn(0, 100),
+                        stars = stars,
+                        remedialRequired = false,
+                        remedialCompleted = true
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private suspend fun updateStudyStreak(userId: String) {
@@ -713,6 +880,23 @@ class WordExplorerRepository(
         }
 
         vocabularyDao.insertDailyAssignments(assignments)
+
+        // Sync daily vocabulary set to Cloud Firestore
+        firestoreRepository?.let { fs ->
+            try {
+                fs.saveDailyVocabulary(
+                    FirestoreDailyVocabulary(
+                        assignmentDate = dateString,
+                        assignedVocabularyIds = assignments.map { it.vocabId },
+                        totalAssigned = assignments.size,
+                        completedCount = assignments.count { it.status == "MASTERED" },
+                        completed = assignments.all { it.status == "MASTERED" }
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
+
         return assignments
     }
 
@@ -732,6 +916,25 @@ class WordExplorerRepository(
         vocabularyDao.updateDailyVocabStatus(userId, dateString, vocabId, status, System.currentTimeMillis())
         if (status == "MASTERED") {
             vocabularyDao.updateLearned(vocabId, true)
+        }
+
+        firestoreRepository?.let { fs ->
+            try {
+                val vocab = vocabularyDao.getVocabularyById(vocabId)
+                if (vocab != null) {
+                    fs.saveVocabularyProgress(
+                        FirestoreVocabularyProgress(
+                            vocabularyId = vocabId,
+                            word = vocab.word,
+                            meaning = vocab.indonesian,
+                            learningStatus = status,
+                            assignedDate = dateString,
+                            reviewCount = 1
+                        )
+                    )
+                }
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -763,7 +966,9 @@ class WordExplorerRepository(
                     exampleTranslation = it.exampleTranslation,
                     cefr = it.cefr,
                     category = it.category,
-                    isLearned = it.isLearned
+                    isLearned = it.isLearned,
+                    clue = it.clue,
+                    clue2 = it.clue2
                 )
             }
         }

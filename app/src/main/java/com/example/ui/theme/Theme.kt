@@ -11,46 +11,46 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AdventureOrange,
-    onPrimary = Color.White,
-    primaryContainer = DeepJungleGreen,
-    onPrimaryContainer = ExplorerCream,
-    secondary = ForestGreen,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFF285434),
-    onSecondaryContainer = ExplorerCream,
-    tertiary = GoldYellow,
-    onTertiary = TextDark,
-    background = DarkBackground,
-    onBackground = Color.White,
-    surface = SurfaceDark,
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF1E4637),
-    onSurfaceVariant = ExplorerCream,
-    error = ErrorRed,
-    onError = Color.White
+private val LightColorScheme = lightColorScheme(
+    primary = DeepForestGreen,
+    onPrimary = PureWhite,
+    primaryContainer = SandGold,
+    onPrimaryContainer = DeepForestGreen,
+    secondary = SageGreen,
+    onSecondary = PureWhite,
+    secondaryContainer = Cream,
+    onSecondaryContainer = DeepForestGreen,
+    tertiary = SandGold,
+    onTertiary = DeepForestGreen,
+    background = Cream,
+    onBackground = DeepForestGreen,
+    surface = PureWhite,
+    onSurface = DeepForestGreen,
+    surfaceVariant = Cream,
+    onSurfaceVariant = DeepForestGreen,
+    error = SemanticRed,
+    onError = PureWhite
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = AdventureOrange,
-    onPrimary = Color.White,
-    primaryContainer = ExplorerCream,
-    onPrimaryContainer = DeepJungleGreen,
-    secondary = ForestGreen,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFD4EBD1),
-    onSecondaryContainer = DeepJungleGreen,
-    tertiary = DeepJungleGreen,
-    onTertiary = Color.White,
-    background = ParchmentLight,
-    onBackground = TextDark,
-    surface = Color.White,
-    onSurface = TextDark,
-    surfaceVariant = Color(0xFFF3EEDC),
-    onSurfaceVariant = TextDark,
-    error = ErrorRed,
-    onError = Color.White
+private val DarkColorScheme = darkColorScheme(
+    primary = SandGold,
+    onPrimary = DeepForestGreen,
+    primaryContainer = DeepForestGreen,
+    onPrimaryContainer = Cream,
+    secondary = SageGreen,
+    onSecondary = PureWhite,
+    secondaryContainer = DeepForestGreen,
+    onSecondaryContainer = Cream,
+    tertiary = Cream,
+    onTertiary = DeepForestGreen,
+    background = DeepForestGreen,
+    onBackground = Cream,
+    surface = Color(0xFF0F260A),
+    onSurface = Cream,
+    surfaceVariant = DeepForestGreen,
+    onSurfaceVariant = Cream,
+    error = SemanticRed,
+    onError = PureWhite
 )
 
 @Composable

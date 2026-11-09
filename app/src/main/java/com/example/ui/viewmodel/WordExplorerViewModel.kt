@@ -60,7 +60,8 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
     val repository = WordExplorerRepository(
         userDao = database.userDao(),
         progressDao = database.progressDao(),
-        vocabularyDao = database.vocabularyDao()
+        vocabularyDao = database.vocabularyDao(),
+        firestoreRepository = com.example.data.firestore.WordExplorerFirestoreRepository(application)
     )
 
     private val googleSignInHelper = GoogleSignInHelper(application)
@@ -138,8 +139,19 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
     val matchingSelectedEnglish = MutableStateFlow<String?>(null)
     val matchingAnswers = mutableStateMapOf<String, String>() // English -> Indonesian
     val typedAnswer = MutableStateFlow("")
+    val showTypingHint = MutableStateFlow(false)
     val scrambledSlots = mutableStateListOf<String>()
     val availableLetters = mutableStateListOf<Pair<Int, String>>() // id to char
+
+    // Interactive Question Types State
+    val sentenceBuilderSlots = mutableStateListOf<String>()
+    val availableSentenceChips = mutableStateListOf<Pair<Int, String>>()
+    val categoryBucketAssignments = mutableStateMapOf<String, String>() // Word -> Bucket Name
+    val selectedCategoryWord = MutableStateFlow<String?>(null)
+    val memoryFlippedIndices = mutableStateListOf<Int>()
+    val memoryMatchedCards = mutableStateListOf<String>() // Set of matched labels
+    val selectedTrueFalse = MutableStateFlow<Boolean?>(null)
+    val selectedGridCoords = mutableStateListOf<Pair<Int, Int>>() // row, col
 
     // Vocabulary state
     val vocabSearchQuery = MutableStateFlow("")
@@ -243,7 +255,7 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
             when (result) {
                 is GoogleAuthResult.Success -> {
                     val repoResult = repository.handleGoogleSignIn(
-                        googleId = result.googleId,
+                        googleId = result.firebaseUid,
                         email = result.email,
                         displayName = result.displayName
                     )
@@ -634,14 +646,37 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
         matchingSelectedEnglish.value = null
         matchingAnswers.clear()
         typedAnswer.value = ""
+        showTypingHint.value = false
         scrambledSlots.clear()
         availableLetters.clear()
+        sentenceBuilderSlots.clear()
+        availableSentenceChips.clear()
+        categoryBucketAssignments.clear()
+        selectedCategoryWord.value = null
+        memoryFlippedIndices.clear()
+        memoryMatchedCards.clear()
+        selectedTrueFalse.value = null
+        selectedGridCoords.clear()
 
-        if (q.type == QuestionType.WORD_UNSCRAMBLE) {
-            val letters = q.scrambledLetters ?: q.correctAnswer.uppercase().map { it.toString() }.shuffled()
-            letters.forEachIndexed { idx, char ->
-                availableLetters.add(Pair(idx, char))
+        when (q.type) {
+            QuestionType.WORD_UNSCRAMBLE, QuestionType.SCRAMBLED_LETTERS -> {
+                val letters = q.scrambledLetters ?: q.correctAnswer.uppercase().map { it.toString() }.shuffled()
+                letters.forEachIndexed { idx, char ->
+                    availableLetters.add(Pair(idx, char))
+                }
             }
+            QuestionType.SENTENCE_BUILDER -> {
+                val tokens = q.sentenceTokens ?: q.correctAnswer.split(" ").shuffled()
+                tokens.forEachIndexed { idx, token ->
+                    availableSentenceChips.add(Pair(idx, token))
+                }
+            }
+            QuestionType.LISTEN_AND_TYPE -> {
+                if (isSoundEnabled.value) {
+                    speakWord(q.audioPromptWord ?: q.targetWord)
+                }
+            }
+            else -> {}
         }
     }
 
@@ -654,15 +689,22 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
         val eng = matchingSelectedEnglish.value ?: return
         matchingAnswers[eng] = indonesian
         matchingSelectedEnglish.value = null
+        soundManager.playMatchPair()
     }
 
     fun unpairMatching(english: String) {
         matchingAnswers.remove(english)
+        soundManager.playTileTap()
     }
 
-    // Fill in the Blanks Action
+    // Fill in the Blanks / Typing Action
     fun setTypedAnswer(text: String) {
         typedAnswer.value = text
+    }
+
+    fun toggleTypingHint() {
+        showTypingHint.value = !showTypingHint.value
+        soundManager.playClick()
     }
 
     // Word Unscramble Actions
@@ -670,12 +712,14 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
         val item = availableLetters.find { it.first == id } ?: return
         availableLetters.remove(item)
         scrambledSlots.add(char)
+        soundManager.playTileTap()
     }
 
     fun removeScrambledLetter(slotIndex: Int) {
         if (slotIndex in scrambledSlots.indices) {
             val char = scrambledSlots.removeAt(slotIndex)
             availableLetters.add(Pair((0..999999).random(), char))
+            soundManager.playTileTap()
         }
     }
 
@@ -687,11 +731,111 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
         letters.forEachIndexed { idx, char ->
             availableLetters.add(Pair(idx, char))
         }
+        soundManager.playClick()
+    }
+
+    // Sentence Builder Actions
+    fun pickSentenceChip(id: Int, token: String) {
+        val item = availableSentenceChips.find { it.first == id } ?: return
+        availableSentenceChips.remove(item)
+        sentenceBuilderSlots.add(token)
+        soundManager.playTileTap()
+    }
+
+    fun removeSentenceChip(slotIndex: Int) {
+        if (slotIndex in sentenceBuilderSlots.indices) {
+            val token = sentenceBuilderSlots.removeAt(slotIndex)
+            availableSentenceChips.add(Pair((0..999999).random(), token))
+            soundManager.playTileTap()
+        }
+    }
+
+    fun resetSentenceBuilder() {
+        val currentQ = quizState.value.questions.getOrNull(quizState.value.currentQuestionIndex) ?: return
+        sentenceBuilderSlots.clear()
+        availableSentenceChips.clear()
+        val tokens = currentQ.sentenceTokens ?: currentQ.correctAnswer.split(" ").shuffled()
+        tokens.forEachIndexed { idx, token ->
+            availableSentenceChips.add(Pair(idx, token))
+        }
+    }
+
+    // Category Sort Actions
+    fun selectCategoryWord(word: String) {
+        selectedCategoryWord.value = if (selectedCategoryWord.value == word) null else word
+    }
+
+    fun assignCategoryWord(word: String, bucket: String) {
+        categoryBucketAssignments[word] = bucket
+        selectedCategoryWord.value = null
+        soundManager.playMatchPair()
+    }
+
+    fun unassignCategoryWord(word: String) {
+        categoryBucketAssignments.remove(word)
+        soundManager.playTileTap()
+    }
+
+    // Memory Flip Actions
+    fun flipMemoryCard(cardIndex: Int, cardKey: String, matchingMap: Map<String, String>) {
+        if (memoryFlippedIndices.contains(cardIndex) || memoryMatchedCards.contains(cardKey)) return
+
+        if (memoryFlippedIndices.size == 2) {
+            memoryFlippedIndices.clear()
+        }
+
+        memoryFlippedIndices.add(cardIndex)
+        soundManager.playTileTap()
+
+        if (memoryFlippedIndices.size == 2) {
+            val idx1 = memoryFlippedIndices[0]
+            val idx2 = memoryFlippedIndices[1]
+            // Check if card 1 and card 2 are a valid match
+            val currentQ = quizState.value.questions.getOrNull(quizState.value.currentQuestionIndex) ?: return
+            val pairs = currentQ.matchingPairs ?: emptyMap()
+            // Pairs are English -> Indonesian
+            val allCards = pairs.flatMap { listOf(it.key, it.value) }.sorted()
+            val card1 = allCards.getOrNull(idx1) ?: ""
+            val card2 = allCards.getOrNull(idx2) ?: ""
+
+            val isMatch = pairs[card1] == card2 || pairs[card2] == card1
+            if (isMatch) {
+                memoryMatchedCards.add(card1)
+                memoryMatchedCards.add(card2)
+                soundManager.playMatchPair()
+            }
+        }
+    }
+
+    // True or False Action
+    fun selectTrueFalse(value: Boolean) {
+        if (!quizState.value.isAnswerChecked) {
+            selectedTrueFalse.value = value
+            soundManager.playClick()
+        }
+    }
+
+    // Word Hunt Action
+    fun toggleGridCoord(row: Int, col: Int) {
+        if (quizState.value.isAnswerChecked) return
+        val coord = Pair(row, col)
+        if (selectedGridCoords.contains(coord)) {
+            selectedGridCoords.remove(coord)
+        } else {
+            selectedGridCoords.add(coord)
+        }
+        soundManager.playTileTap()
+    }
+
+    fun clearGridCoords() {
+        selectedGridCoords.clear()
+        soundManager.playClick()
     }
 
     fun selectQuizOption(option: String) {
         if (!quizState.value.isAnswerChecked) {
             quizState.value = quizState.value.copy(selectedOption = option)
+            soundManager.playClick()
         }
     }
 
@@ -707,18 +851,40 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
                     matchingAnswers[eng].equals(indo, ignoreCase = true)
                 }
             }
-            QuestionType.FILL_BLANK -> {
+            QuestionType.FILL_BLANK, QuestionType.LISTEN_AND_TYPE -> {
                 typedAnswer.value.trim().equals(currentQ.correctAnswer.trim(), ignoreCase = true)
             }
-            QuestionType.WORD_UNSCRAMBLE -> {
+            QuestionType.WORD_UNSCRAMBLE, QuestionType.SCRAMBLED_LETTERS -> {
                 scrambledSlots.joinToString("").trim().equals(currentQ.correctAnswer.trim(), ignoreCase = true)
             }
-            QuestionType.IMAGE_VOCABULARY -> {
-                state.selectedOption == currentQ.correctAnswer
+            QuestionType.SENTENCE_BUILDER -> {
+                val built = sentenceBuilderSlots.joinToString(" ").trim()
+                val expected = (currentQ.orderedSentence ?: currentQ.correctAnswer).trim()
+                built.equals(expected, ignoreCase = true)
             }
-            QuestionType.SENTENCE_COMPLETION -> {
-                state.selectedOption == currentQ.correctAnswer
+            QuestionType.CATEGORY_SORT -> {
+                val buckets = currentQ.categoryBuckets ?: emptyMap()
+                buckets.isNotEmpty() && buckets.all { (bucketName, expectedWords) ->
+                    expectedWords.all { word -> categoryBucketAssignments[word] == bucketName }
+                }
             }
+            QuestionType.MEMORY_FLIP -> {
+                val pairs = currentQ.matchingPairs ?: emptyMap()
+                pairs.isNotEmpty() && memoryMatchedCards.size >= pairs.size * 2
+            }
+            QuestionType.TRUE_OR_FALSE -> {
+                selectedTrueFalse.value == currentQ.isStatementTrue
+            }
+            QuestionType.WORD_HUNT -> {
+                val grid = currentQ.gridLetters ?: emptyList()
+                val tappedChars = selectedGridCoords.mapNotNull { (r, c) ->
+                    grid.getOrNull(r)?.getOrNull(c)
+                }.joinToString("")
+                tappedChars.equals(currentQ.correctAnswer, ignoreCase = true)
+            }
+            QuestionType.PICTURE_TAP,
+            QuestionType.IMAGE_VOCABULARY,
+            QuestionType.SENTENCE_COMPLETION,
             QuestionType.MULTIPLE_CHOICE -> {
                 state.selectedOption == currentQ.correctAnswer
             }
@@ -784,6 +950,7 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
             )
 
             if (remedialTasks.isEmpty()) {
+                soundManager.playVictoryFanfare()
                 quizState.value = state.copy(
                     isQuizFinished = true,
                     isRemedialMode = false,
@@ -845,6 +1012,7 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
                     firstAttemptScore = state.firstAttemptScore
                 )
                 if (isAllResolved) {
+                    soundManager.playVictoryFanfare()
                     quizState.value = quizState.value.copy(isLevelCompleted = true)
                 }
             }

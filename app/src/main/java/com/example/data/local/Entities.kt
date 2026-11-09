@@ -102,7 +102,9 @@ data class VocabularyEntity(
     val exampleTranslation: String,
     val cefr: String,
     val category: String,
-    val isLearned: Boolean = false
+    val isLearned: Boolean = false,
+    val clue: String = "",
+    val clue2: String = ""
 )
 
 @Entity(tableName = "story_progress")

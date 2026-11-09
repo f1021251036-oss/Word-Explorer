@@ -53,7 +53,7 @@ fun VocabularyScreen(viewModel: WordExplorerViewModel) {
                 onTabSelected = { viewModel.currentAppScreen.value = it }
             )
         },
-        containerColor = DarkBackground
+        containerColor = Cream
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -61,24 +61,25 @@ fun VocabularyScreen(viewModel: WordExplorerViewModel) {
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // Header with Honest Database Capacity Indicator
+            // Header Card
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = DeepJungleGreen,
-                border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
+                shape = RoundedCornerShape(14.dp),
+                color = DeepForestGreen,
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, SandGold),
+                shadowElevation = 3.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
                         text = "📚 Explorer Lexicon & Dictionary",
                         fontWeight = FontWeight.Bold,
-                        color = GoldYellow,
+                        color = SandGold,
                         fontSize = 15.sp
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "Menampilkan ${vocabList.size} kosakata aktif kurikulum SMP. Arsitektur data Room siap mendukung ekspansi hingga 170.000 entri.",
-                        color = ExplorerCream,
+                        text = "Menampilkan ${vocabList.size} kosakata aktif kurikulum petualangan.",
+                        color = PureWhite,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
@@ -91,16 +92,16 @@ fun VocabularyScreen(viewModel: WordExplorerViewModel) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.searchVocabulary(it) },
-                placeholder = { Text("Cari kata Inggris atau artinya...", color = ExplorerCream.copy(alpha = 0.5f)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = ExplorerCream) },
+                placeholder = { Text("Cari kata Inggris atau artinya...", color = SageGreen) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = DeepForestGreen) },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GoldYellow,
-                    unfocusedBorderColor = ForestGreen,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedContainerColor = SurfaceDark,
-                    unfocusedContainerColor = SurfaceDark
+                    focusedBorderColor = DeepForestGreen,
+                    unfocusedBorderColor = SageGreen,
+                    focusedTextColor = DeepForestGreen,
+                    unfocusedTextColor = DeepForestGreen,
+                    focusedContainerColor = PureWhite,
+                    unfocusedContainerColor = PureWhite
                 ),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
@@ -117,17 +118,17 @@ fun VocabularyScreen(viewModel: WordExplorerViewModel) {
                     FilterChip(
                         selected = isSelected,
                         onClick = { viewModel.setVocabCategory(category) },
-                        label = { Text(category, fontSize = 12.sp) },
+                        label = { Text(category, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AdventureOrange,
-                            selectedLabelColor = Color.White,
-                            containerColor = SurfaceDark,
-                            labelColor = ExplorerCream
+                            selectedContainerColor = DeepForestGreen,
+                            selectedLabelColor = PureWhite,
+                            containerColor = PureWhite,
+                            labelColor = DeepForestGreen
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
                             selected = isSelected,
-                            borderColor = ForestGreen
+                            borderColor = if (isSelected) DeepForestGreen else SageGreen
                         )
                     )
                 }
@@ -143,7 +144,8 @@ fun VocabularyScreen(viewModel: WordExplorerViewModel) {
                 items(vocabList, key = { it.id }) { vocab ->
                     VocabularyCard(
                         vocab = vocab,
-                        onToggleLearned = { viewModel.toggleLearnedWord(vocab) }
+                        onToggleLearned = { viewModel.toggleLearnedWord(vocab) },
+                        onSpeak = { viewModel.speakWord(vocab.word) }
                     )
                 }
             }
@@ -154,11 +156,14 @@ fun VocabularyScreen(viewModel: WordExplorerViewModel) {
 @Composable
 fun VocabularyCard(
     vocab: VocabularyItem,
-    onToggleLearned: () -> Unit
+    onToggleLearned: () -> Unit,
+    onSpeak: () -> Unit = {}
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        colors = CardDefaults.cardColors(containerColor = PureWhite),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -173,45 +178,54 @@ fun VocabularyCard(
                         Text(
                             text = vocab.word,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Black,
-                            color = GoldYellow,
+                            fontWeight = FontWeight.Bold,
+                            color = DeepForestGreen,
                             fontSize = 18.sp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = vocab.pronunciation,
-                            color = ExplorerCream.copy(alpha = 0.7f),
+                            color = SageGreen,
                             fontSize = 12.sp
                         )
                     }
                     Text(
                         text = "${vocab.partOfSpeech} • ${vocab.category}",
-                        color = ForestGreen,
+                        color = SageGreen,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onSpeak,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = "Speak Word",
+                            tint = DeepForestGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = when (vocab.cefr) {
-                            "A1" -> ForestGreen
-                            "A2" -> AdventureOrange
-                            "B1" -> SeaBlue
-                            else -> CrystalViolet
-                        }
+                        color = DeepForestGreen
                     ) {
                         Text(
                             text = vocab.cefr,
-                            color = Color.White,
+                            color = SandGold,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     IconButton(
                         onClick = onToggleLearned,
@@ -220,7 +234,7 @@ fun VocabularyCard(
                         Icon(
                             imageVector = if (vocab.isLearned) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                             contentDescription = "Toggle Learned",
-                            tint = if (vocab.isLearned) SuccessGreen else ExplorerCream.copy(alpha = 0.5f)
+                            tint = if (vocab.isLearned) DeepForestGreen else SageGreen.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -232,35 +246,36 @@ fun VocabularyCard(
             Text(
                 text = "Arti: ${vocab.indonesian}",
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = DeepForestGreen,
                 fontSize = 14.sp
             )
             Text(
                 text = "Definisi: ${vocab.englishDef}",
-                color = ExplorerCream,
+                color = DeepForestGreen.copy(alpha = 0.85f),
                 fontSize = 13.sp,
-                lineHeight = 17.sp
+                lineHeight = 18.sp
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Example Sentence Box
+            // Example Sentence Box (Cream Parchment Box)
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF1E4637),
+                color = Cream,
+                border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Text(
                         text = "💬 \"${vocab.exampleSentence}\"",
-                        color = GoldYellow,
+                        color = DeepForestGreen,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "(${vocab.exampleTranslation})",
-                        color = ExplorerCream.copy(alpha = 0.8f),
+                        color = DeepForestGreen.copy(alpha = 0.8f),
                         fontSize = 12.sp
                     )
                 }
