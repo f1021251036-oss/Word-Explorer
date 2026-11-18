@@ -150,16 +150,16 @@ fun LevelDetailSheet(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Questions", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text("10 Questions", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Questions", color = SageDark, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("10 Questions", color = Forest900, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Remedial", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Adaptive", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Remedial", color = SageDark, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Adaptive", color = Forest900, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Max Stars", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text("⭐⭐⭐", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Max Stars", color = SageDark, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("⭐⭐⭐", color = Forest900, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
             }
@@ -196,11 +196,11 @@ fun LevelDetailSheet(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Timer, contentDescription = null, tint = SageGreen, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Timer, contentDescription = null, tint = SageDark, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Reset harian berikutnya dalam: $timeUntilReset",
-                                color = DeepForestGreen,
+                                color = Forest900,
                                 fontSize = 12.sp
                             )
                         }
@@ -209,6 +209,7 @@ fun LevelDetailSheet(
             }
 
             // Start Quiz Button
+            val isStartEnabled = level.status != LevelStatus.LOCKED && !isLockedByDailyLimit
             Button(
                 onClick = onStartQuiz,
                 modifier = Modifier
@@ -216,21 +217,23 @@ fun LevelDetailSheet(
                     .height(52.dp)
                     .testTag("start_quiz_button"),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isLockedByDailyLimit) SageGreen.copy(alpha = 0.5f) else DeepForestGreen,
-                    contentColor = PureWhite
+                    containerColor = Honey,
+                    contentColor = Forest900,
+                    disabledContainerColor = DisabledBg,
+                    disabledContentColor = DisabledFg
                 ),
                 shape = RoundedCornerShape(14.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.75.dp,
-                    if (level.status != LevelStatus.LOCKED && !isLockedByDailyLimit) SandGold else SageGreen.copy(alpha = 0.5f)
+                    if (isStartEnabled) Forest900 else Sage
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 1.dp),
-                enabled = level.status != LevelStatus.LOCKED && !isLockedByDailyLimit
+                enabled = isStartEnabled
             ) {
                 Icon(
                     imageVector = if (isLockedByDailyLimit) Icons.Default.Lock else Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = PureWhite
+                    tint = if (isStartEnabled) Forest900 else DisabledFg
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -239,7 +242,7 @@ fun LevelDetailSheet(
                         isCompleted -> "Latihan Ulang Level (Review)"
                         else -> "Mulai Kuis Petualangan"
                     },
-                    color = PureWhite,
+                    color = if (isStartEnabled) Forest900 else DisabledFg,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )

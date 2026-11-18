@@ -1,0 +1,212 @@
+/* ==========================================================================
+   COLOR TOKENS: Adventure Explorer, main color = DEEP OCEAN BLUE
+   --------------------------------------------------------------------------
+   How to use
+   1. Import this file ONCE, before every other stylesheet.
+   2. Components use ONLY the semantic aliases (--color-*, --accent-*,
+      --tier-*, --rarity-*). Never use raw palette names inside components.
+   3. To retune the look, change a palette value in section 1. Every
+      alias and every component updates automatically.
+   Main color: deep ocean blue (base-*). Support colors: gold, cream,
+   leaf green (success), brick red (error), teal (info), plum (Lore).
+   All colors are muted (no neon). The blue accent is intentionally NOT
+   used for info, so the main color never competes with an accent.
+   ========================================================================== */
+
+:root {
+  /* ---------- 1. PALETTE (raw values, do not use in components) ---------- */
+
+  /* Ink and main blue (base) */
+  --ink:          #08141F;
+  --base-900:     #0B2236;
+  --base-700:     #17384F;
+  --base-500:     #1F4E73;
+  --mist:         #7F9DB5;
+  --mist-light:   #C9D8E3;
+  --mist-dark:    #4F6F8A;
+
+  /* Greens (success and completed) */
+  --leaf:         #4A8236;
+  --leaf-dark:    #2F6B21;
+
+  /* Warm lights */
+  --cream:        #FFF2B4;
+  --parchment:    #F6E7A6;
+  --sand:         #E5CD82;
+  --white:        #FFFFFF;
+
+  /* Warm accents */
+  --honey:        #D9A441;
+  --honey-dark:   #8A5A12;
+  --terracotta:   #B8582F;
+  --terracotta-light: #F0C7B8;
+  --bark:         #6B4A2B;
+  --bark-light:   #D8C3A0;
+
+  /* Teal (info, links, Lexicon, Skilled tier, rare rewards) */
+  --lagoon:       #2F7A78;
+  --lagoon-dark:  #1F5654;
+  --lagoon-light: #CFE5E1;
+
+  /* Muted purple (Lore, Master tier, epic rewards) */
+  --plum:         #7B5A8C;
+  --plum-dark:    #4F3660;
+  --plum-light:   #E3D6EA;
+
+  /* Muted red (wrong answers and danger) */
+  --brick:        #A8403A;
+  --brick-dark:   #7A2B27;
+  --brick-light:  #F2CFCB;
+
+  /* State shades (explicit values so contrast can be verified) */
+  --honey-hover:    #C0943A;
+  --honey-pressed:  #A68333;
+  --sand-hover:     #CBB873;
+  --base-500-hover: #286089;
+
+  /* ---------- 2. SEMANTIC ALIASES (use these in components) ---------- */
+
+  /* Surfaces */
+  --color-bg:              var(--base-900);  /* page background */
+  --color-surface:         var(--base-700);  /* cards on the page */
+  --color-surface-raised:  var(--base-500);  /* raised cards, tracks */
+  --color-surface-raised-hover: var(--base-500-hover);
+  --color-paper:           var(--cream);     /* reading surface */
+  --color-paper-alt:       var(--parchment); /* alternate reading surface */
+  --color-field:           var(--white);     /* inputs */
+
+  /* Text */
+  --color-text-on-dark:    var(--cream);
+  --color-text-strong-on-dark: var(--white);
+  --color-text-on-paper:   var(--ink);
+  --color-text-muted-on-paper: var(--bark);
+
+  /* Borders and focus */
+  --color-outline:         var(--ink);       /* borders on light surfaces */
+  --color-border-on-dark:  var(--mist);      /* borders on dark surfaces */
+  --color-border-strong-on-dark: var(--sand);
+  --color-focus-on-dark:   var(--honey);     /* 3px ring on dark surfaces */
+  --color-focus-on-paper:  var(--ink);       /* 3px ring on light surfaces */
+  --color-shadow-hard:     var(--ink);       /* hard offset shadows */
+
+  /* Primary action */
+  --color-primary:         var(--honey);
+  --color-primary-hover:   var(--honey-hover);
+  --color-primary-pressed: var(--honey-pressed);
+  --color-on-primary:      var(--ink);
+
+  /* Secondary action (on dark surfaces) */
+  --color-secondary-border: var(--sand);
+  --color-on-secondary:     var(--cream);
+
+  /* Selected */
+  --color-selected:        var(--sand);
+  --color-selected-hover:  var(--sand-hover);
+  --color-on-selected:     var(--ink);
+
+  /* Success and completed (always with a checkmark) */
+  --color-success:         var(--leaf);        /* fills and progress on dark */
+  --color-success-strong:  var(--leaf-dark);   /* fills and text on light */
+  --color-on-success:      var(--white);
+
+  /* Error and danger (always with a cross icon) */
+  --color-error:           var(--brick);
+  --color-on-error:        var(--cream);
+  --color-error-soft:      var(--brick-light);
+  --color-error-text:      var(--brick-dark);  /* text on soft or light surfaces */
+  --color-error-on-dark:   var(--brick-light); /* text and icons on dark */
+
+  /* Warning (always with an exclamation icon) */
+  --color-warning:         var(--honey);
+  --color-warning-soft:    var(--cream);
+  --color-warning-text:    var(--honey-dark);
+
+  /* Info, links, and water items (teal) */
+  --color-info:            var(--lagoon);
+  --color-info-soft:       var(--lagoon-light);
+  --color-info-text:       var(--lagoon-dark); /* on light surfaces */
+  --color-info-on-dark:    var(--lagoon-light);/* on dark surfaces */
+  --color-on-info:         var(--white);
+  --color-water:           var(--lagoon);
+  --color-water-soft:      var(--lagoon-light);
+  --color-water-text:      var(--lagoon-dark);
+
+  /* Locked (always with a lock icon) */
+  --color-locked:          var(--mist);        /* icons on dark surfaces */
+  --color-locked-on-paper: var(--mist-dark);   /* icons on light surfaces */
+  --color-locked-soft:     var(--mist-light);
+  --color-on-locked-soft:  var(--ink);
+
+  /* Current level / in progress (always with a label) */
+  --color-current:         var(--honey);
+  --color-on-current:      var(--ink);
+
+  /* Section accents (active nav tab, header strip, small badges only) */
+  --accent-map:            var(--sand);
+  --accent-camp:           var(--honey);
+  --accent-lexicon:        var(--lagoon);
+  --accent-lore:           var(--plum);
+  --accent-lore-on-dark:   var(--plum-light);
+  --accent-beasts:         var(--terracotta);
+
+  /* Learning tiers (white text on these fills) */
+  --tier-beginner:         var(--leaf-dark);
+  --tier-skilled:          var(--lagoon);
+  --tier-master:           var(--plum);
+  --color-on-tier:         var(--white);
+
+  /* Reward rarity (always with an icon or label too) */
+  --rarity-common:         var(--sand);
+  --rarity-rare:           var(--lagoon);
+  --rarity-epic:           var(--plum);
+  --rarity-legendary:      var(--honey);
+
+  /* Rewards (XP, stars, streak) */
+  --color-reward:          var(--sand);
+  --color-reward-strong:   var(--honey);
+  --color-on-reward:       var(--ink);
+
+  /* Hard offset shadows (no blur) */
+  --shadow-hard-sm: 0 2px 0 var(--color-shadow-hard);
+  --shadow-hard:    0 4px 0 var(--color-shadow-hard);
+  --shadow-hard-lg: 0 6px 0 var(--color-shadow-hard);
+}
+
+/* ---------- 3. FALLBACKS ---------- */
+
+/* Windows high contrast / forced colors: keep borders visible */
+@media (forced-colors: active) {
+  :root {
+    --color-outline: CanvasText;
+    --color-border-on-dark: CanvasText;
+    --color-border-strong-on-dark: CanvasText;
+    --color-focus-on-dark: Highlight;
+    --color-focus-on-paper: Highlight;
+    --color-shadow-hard: CanvasText;
+  }
+}
+
+/* Dark page color scheme hint for form controls and scrollbars */
+:root {
+  color-scheme: dark;
+  background-color: var(--color-bg);
+  color: var(--color-text-on-dark);
+}
+
+/* ---------- 4. USAGE EXAMPLES (copy into shared components) ---------- */
+
+/*
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 2px solid var(--color-outline);
+  box-shadow: var(--shadow-hard);
+}
+.btn-primary:hover  { background: var(--color-primary-hover); }
+.btn-primary:active { background: var(--color-primary-pressed); transform: translateY(4px); box-shadow: none; }
+.btn-primary:focus-visible { outline: 3px solid var(--color-focus-on-dark); outline-offset: 3px; }
+
+.option.is-selected { background: var(--color-selected); color: var(--color-on-selected); border: 3px solid var(--color-outline); }
+.feedback.is-correct { background: var(--color-success-strong); color: var(--color-on-success); }
+.feedback.is-wrong   { background: var(--color-error-soft); color: var(--color-error-text); border: 2px solid var(--color-error); }
+*/

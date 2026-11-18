@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,8 +11,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
@@ -71,8 +73,8 @@ fun OnboardingScreen(viewModel: WordExplorerViewModel) {
         ) {
             Surface(
                 shape = CircleShape,
-                color = DeepJungleGreen,
-                border = androidx.compose.foundation.BorderStroke(3.dp, GoldYellow),
+                color = Forest900,
+                border = androidx.compose.foundation.BorderStroke(3.dp, Sand),
                 shadowElevation = 8.dp,
                 modifier = Modifier.size(100.dp)
             ) {
@@ -118,7 +120,7 @@ fun OnboardingScreen(viewModel: WordExplorerViewModel) {
                         modifier = Modifier
                             .size(if (i == step) 24.dp else 10.dp, 10.dp)
                             .clip(RoundedCornerShape(5.dp))
-                            .background(if (i == step) AdventureOrange else Color(0xFF285434))
+                            .background(if (i == step) Honey else Forest500)
                     )
                 }
             }
@@ -133,7 +135,10 @@ fun OnboardingScreen(viewModel: WordExplorerViewModel) {
                         viewModel.completeOnboardingIntro()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Honey,
+                    contentColor = Forest900
+                ),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,10 +149,10 @@ fun OnboardingScreen(viewModel: WordExplorerViewModel) {
                     text = currentSlide.third,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.White
+                    color = Forest900
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Forest900)
             }
         }
     }
@@ -186,147 +191,291 @@ fun QuestionnaireScreen(viewModel: WordExplorerViewModel) {
     val currentQ = questions[currentQIndex]
     val selectedAns = viewModel.questionnaireAnswers[currentQIndex]
 
+    BackHandler(enabled = currentQIndex > 0) {
+        currentQIndex--
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(Forest700)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(20.dp)
     ) {
         Column(
             modifier = Modifier
+                .widthIn(max = 600.dp)
+                .align(Alignment.Center)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
         ) {
-            // Header Progress
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Kuesioner Pengalaman Belajar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = GoldYellow
-                )
-                Text(
-                    text = "${currentQIndex + 1} / ${questions.size}",
-                    color = ExplorerCream,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LinearProgressIndicator(
-                progress = { (currentQIndex + 1).toFloat() / questions.size.toFloat() },
+            // Fixed Top Header & Progress Bar
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = AdventureOrange,
-                trackColor = Color(0xFF285434)
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // Question Box
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "Pertanyaan ${currentQIndex + 1}:",
-                        color = ForestGreen,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = currentQ.first,
+                        text = "Kuesioner Pengalaman Belajar",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        fontWeight = FontWeight.Bold,
+                        color = Sand,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Forest900,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorderSubtle)
+                    ) {
+                        Text(
+                            text = "${currentQIndex + 1} / ${questions.size}",
+                            color = Cream,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Forest900)
+                        .border(1.dp, DarkBorderSubtle, RoundedCornerShape(6.dp))
+                ) {
+                    LinearProgressIndicator(
+                        progress = { (currentQIndex + 1).toFloat() / questions.size.toFloat() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp),
+                        color = Honey,
+                        trackColor = Color.Transparent
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            // Scrollable Question & Elevated Option Cards
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 16.dp)
+            ) {
+                // Question Box
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Forest900),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, DarkBorderSubtle),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Text(
+                            text = "PERTANYAAN ${currentQIndex + 1} DARI ${questions.size}",
+                            color = LeafBright,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            letterSpacing = 0.8.sp
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = currentQ.first,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PureWhite,
+                            lineHeight = 24.sp
+                        )
+                    }
+                }
 
-            // Options
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                currentQ.second.forEach { option ->
-                    val isSelected = selectedAns == option
-                    Surface(
-                        onClick = { viewModel.submitQuestionnaireAnswer(currentQIndex, option) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) Color(0xFF285434) else SurfaceDark,
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.5.dp,
-                            if (isSelected) GoldYellow else ForestGreen.copy(alpha = 0.5f)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("option_${option.take(8)}")
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Elevated High-Contrast Options
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    currentQ.second.forEachIndexed { optIdx, option ->
+                        val isSelected = selectedAns == option
+                        val optionLetter = ('A' + optIdx).toString()
+
+                        Surface(
+                            onClick = { viewModel.submitQuestionnaireAnswer(currentQIndex, option) },
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isSelected) HoneyTint else PureWhite,
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = if (isSelected) 2.dp else 1.5.dp,
+                                color = if (isSelected) HoneyPressed else Sage
+                            ),
+                            shadowElevation = if (isSelected) 6.dp else 3.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 56.dp)
+                                .testTag("option_${option.take(8)}")
                         ) {
-                            Box(
+                            Row(
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isSelected) GoldYellow else Color.Transparent)
-                                    .border(2.dp, if (isSelected) GoldYellow else ExplorerCream, CircleShape),
-                                contentAlignment = Alignment.Center
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isSelected) Honey else CreamSoft,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.5.dp,
+                                        if (isSelected) Forest900 else Sage
+                                    ),
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = optionLetter,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = Forest900
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Text(
+                                    text = option,
+                                    color = Forest900,
+                                    fontSize = 15.sp,
+                                    lineHeight = 21.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
                                 if (isSelected) {
-                                    Icon(Icons.Default.Check, contentDescription = null, tint = DeepJungleGreen, modifier = Modifier.size(16.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Terpilih",
+                                        tint = Leaf,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .border(2.dp, Sage, CircleShape)
+                                    )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(14.dp))
-                            Text(
-                                text = option,
-                                color = if (isSelected) Color.White else ExplorerCream,
-                                fontSize = 15.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Next / Finish Button
-            Button(
-                onClick = {
-                    if (currentQIndex < questions.size - 1) {
-                        currentQIndex++
-                    } else {
-                        viewModel.completeQuestionnaire()
-                    }
-                },
-                enabled = selectedAns != null,
-                colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .testTag("questionnaire_next_button")
+            // Docked Bottom Action Bar (Always visible & high-contrast in both states)
+            Surface(
+                color = Forest900,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorderSubtle),
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = if (currentQIndex < questions.size - 1) "Pertanyaan Berikutnya" else "Lanjut ke Diagnostic Test",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = Color.White
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (selectedAns == null) {
+                        Text(
+                            text = "Pilih salah satu jawaban di atas untuk melanjutkan",
+                            color = Cream,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (currentQIndex > 0) {
+                            OutlinedButton(
+                                onClick = { currentQIndex-- },
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Sand),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Forest700,
+                                    contentColor = Sand
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 52.dp)
+                                    .testTag("questionnaire_back_button")
+                            ) {
+                                Text(
+                                    text = "Kembali",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                if (currentQIndex < questions.size - 1) {
+                                    currentQIndex++
+                                } else {
+                                    viewModel.completeQuestionnaire()
+                                }
+                            },
+                            enabled = selectedAns != null,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Honey,
+                                contentColor = Forest900,
+                                disabledContainerColor = DisabledBg,
+                                disabledContentColor = DisabledFg
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.5.dp,
+                                if (selectedAns != null) Forest900 else Sage
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 4.dp,
+                                pressedElevation = 1.dp,
+                                disabledElevation = 1.dp
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 52.dp)
+                                .testTag("questionnaire_next_button")
+                        ) {
+                            Text(
+                                text = if (currentQIndex < questions.size - 1) "Pertanyaan Berikutnya" else "Lanjut ke Diagnostic Test",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Center,
+                                color = if (selectedAns != null) Forest900 else DisabledFg
+                            )
+                            if (selectedAns != null) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = Forest900,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -362,7 +511,7 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Diagnostic Test",
                             style = MaterialTheme.typography.titleMedium,
@@ -375,14 +524,15 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                             color = ExplorerCream
                         )
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF285434)
+                        color = Forest500
                     ) {
                         Text(
                             text = "Soal ${qIndex + 1}/${questions.size}",
                             fontWeight = FontWeight.Bold,
-                            color = GoldYellow,
+                            color = Sand,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         )
                     }
@@ -396,8 +546,8 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp)),
-                    color = ForestGreen,
-                    trackColor = Color(0xFF285434)
+                    color = LeafBright,
+                    trackColor = Forest500
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -405,7 +555,7 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                 // Diagnostic Prompt Card
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                    colors = CardDefaults.cardColors(containerColor = Forest900),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -413,11 +563,11 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = AdventureOrange
+                                color = Lagoon
                             ) {
                                 Text(
                                     text = "CEFR ${currentQ.cefrLevel}",
-                                    color = Color.White,
+                                    color = PureWhite,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -429,7 +579,7 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                             text = currentQ.prompt,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            color = PureWhite,
                             lineHeight = 24.sp
                         )
                     }
@@ -443,8 +593,8 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                         Surface(
                             onClick = { viewModel.answerDiagnosticQuestion(optIndex) },
                             shape = RoundedCornerShape(14.dp),
-                            color = SurfaceDark,
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF2E6348)),
+                            color = Forest900,
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, DarkBorderSubtle),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("diag_opt_$optIndex")
@@ -455,14 +605,14 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                             ) {
                                 Surface(
                                     shape = CircleShape,
-                                    color = Color(0xFF285434),
+                                    color = Forest500,
                                     modifier = Modifier.size(32.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
                                             text = ('A' + optIndex).toString(),
                                             fontWeight = FontWeight.Bold,
-                                            color = GoldYellow
+                                            color = Sand
                                         )
                                     }
                                 }
@@ -520,8 +670,8 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                 // Assigned Path Card
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, AdventureOrange),
+                    colors = CardDefaults.cardColors(containerColor = Forest900),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, Honey),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -530,7 +680,7 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                     ) {
                         Text(
                             text = "Jalur Pembelajaranmu:",
-                            color = ExplorerCream,
+                            color = Cream,
                             fontSize = 13.sp
                         )
                         Spacer(modifier = Modifier.height(6.dp))
@@ -538,18 +688,18 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
                             text = assignedPath.title,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
-                            color = GoldYellow
+                            color = Sand
                         )
                         Text(
                             text = "Standar Target: ${assignedPath.cefrLabel} | Target: ${assignedPath.targetWordsPerDay} kata/hari",
-                            color = ForestGreen,
+                            color = LeafBright,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = assignedPath.description,
-                            color = Color.White,
+                            color = PureWhite,
                             textAlign = TextAlign.Center,
                             fontSize = 14.sp
                         )
@@ -560,7 +710,7 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
 
                 Text(
                     text = "Catatan: Hasil ini adalah panduan awal belajar di Word Explorer, bukan sertifikasi resmi CEFR. Kamu tetap dapat mengulang atau berpindah jalur kapan saja.",
-                    color = ExplorerCream.copy(alpha = 0.7f),
+                    color = SageLight,
                     fontSize = 11.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -570,20 +720,23 @@ fun DiagnosticScreen(viewModel: WordExplorerViewModel) {
 
                 Button(
                     onClick = { viewModel.enterAdventureAfterDiagnostic() },
-                    colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Honey,
+                        contentColor = Forest900
+                    ),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .testTag("enter_adventure_button")
                 ) {
-                    Icon(Icons.Default.Explore, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Default.Explore, contentDescription = null, tint = Forest900)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Masuki Peta Petualangan!",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = Color.White
+                        color = Forest900
                     )
                 }
             }

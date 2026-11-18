@@ -9,15 +9,20 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -125,7 +130,7 @@ fun ParchmentDossierCard(
     Box(
         modifier = modifier
             .rotate(rotation)
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(14.dp), spotColor = DeepForestGreen)
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(14.dp), spotColor = ShadowDark)
     ) {
         Surface(
             shape = RoundedCornerShape(14.dp),
@@ -266,7 +271,60 @@ fun HandDrawnWindingTrail(
 }
 
 // =========================================================================
-// 4. CHUNKY TACTILE SIGNPOST BUTTON
+// 4. SHARED EXPEDITION TEXT INPUT FIELD (UNIFIED OUTLINE & STATES)
+// =========================================================================
+@Composable
+fun ExpeditionTextInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholderText: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    testTag: String = "expedition_text_input_field"
+) {
+    var isFocused by remember { mutableStateOf(false) }
+
+    // Single container, single 1.5.dp border (Sage when idle, Forest when focused), NO notch cut
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = PureWhite,
+        border = androidx.compose.foundation.BorderStroke(
+            1.5.dp,
+            if (!enabled) Sage.copy(alpha = 0.6f) else if (isFocused) Forest700 else Sage
+        ),
+        shadowElevation = if (enabled) 2.dp else 0.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { Text(placeholderText, color = SageDark, fontSize = 14.sp) },
+            enabled = enabled,
+            trailingIcon = trailingIcon,
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                disabledBorderColor = Color.Transparent,
+                focusedTextColor = Forest900,
+                unfocusedTextColor = Forest900,
+                disabledTextColor = DisabledFg
+            ),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { isFocused = it.isFocused }
+                .testTag(testTag)
+        )
+    }
+}
+
+// =========================================================================
+// 5. CHUNKY TACTILE SIGNPOST BUTTON
 // =========================================================================
 @Composable
 fun TactileSignpostButton(
@@ -281,16 +339,18 @@ fun TactileSignpostButton(
     icon: @Composable (() -> Unit)? = null
 ) {
     var isPressed by remember { mutableStateOf(false) }
-    val pressOffsetY by animateFloatAsState(targetValue = if (isPressed) 3f else 0f, label = "pressOffset")
+    val pressOffsetY by animateFloatAsState(targetValue = if (isPressed && enabled) 3f else 0f, label = "pressOffset")
 
-    val buttonBorderColor = if (enabled) SandGold else SageGreen.copy(alpha = 0.5f)
-    val shadowBevelColor = if (enabled) Color(0xFF0F261E) else Color(0x660F261E)
+    // Task 5: Exactly ONE shape, ONE border stroke (solid #15370D Forest), ONE hard 3dp offset shadow
+    val currentBorderColor = if (enabled) Forest900 else Sage
+    val currentBgColor = if (enabled) backgroundColor else DisabledBg
+    val currentTextColor = if (enabled) contentColor else DisabledFg
 
     Box(
         modifier = modifier
             .testTag(testTag)
             .fillMaxWidth()
-            .height(62.dp)
+            .height(58.dp)
             .pointerInput(enabled) {
                 if (enabled) {
                     detectTapGestures(
@@ -304,54 +364,54 @@ fun TactileSignpostButton(
                 }
             }
     ) {
-        // Physical 3D bottom bevel chassis - precisely aligned with the top plate
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = shadowBevelColor,
-            border = androidx.compose.foundation.BorderStroke(1.75.dp, Color(0xFF091712)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp)
-                .offset(y = 4.dp)
-        ) {}
+        if (enabled) {
+            // Hard offset 3D shadow layer (exact same 14.dp rounded corner, shifted down 3.dp, solid ShadowDark)
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = ShadowDark,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .offset(y = 3.dp)
+            ) {}
+        }
 
-        // Main tactile button plate - matches shape and border stroke exactly
+        // Main tactile button plate (exact same 14.dp rounded corner, single 1.5.dp border)
         Surface(
             shape = RoundedCornerShape(14.dp),
-            color = if (enabled) backgroundColor else SageGreen.copy(alpha = 0.5f),
-            border = androidx.compose.foundation.BorderStroke(1.75.dp, buttonBorderColor),
-            shadowElevation = if (isPressed) 1.dp else 4.dp,
+            color = currentBgColor,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, currentBorderColor),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(58.dp)
+                .height(52.dp)
                 .offset(y = pressOffsetY.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 18.dp),
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 if (icon != null) {
                     icon()
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = label.uppercase(),
                         fontFamily = CinzelFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         letterSpacing = 1.sp,
-                        color = contentColor
+                        color = currentTextColor
                     )
                     if (subLabel != null) {
                         Text(
                             text = subLabel,
                             fontFamily = JakartaFontFamily,
                             fontSize = 11.sp,
-                            color = Cream.copy(alpha = 0.85f)
+                            color = if (enabled) contentColor.copy(alpha = 0.85f) else DisabledFg
                         )
                     }
                 }
@@ -383,76 +443,247 @@ fun ExplorerTopBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Brass Surveyor Plaque (Path Selector)
             Box {
-                Surface(
-                    onClick = { showPathMenu = true },
-                    shape = RoundedCornerShape(14.dp),
-                    color = SandGold,
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, DeepForestGreen),
-                    shadowElevation = 3.dp,
-                    modifier = Modifier.testTag("path_selector_button")
+                val chevronRotation by animateFloatAsState(
+                    targetValue = if (showPathMenu) 180f else 0f,
+                    label = "tierChevronRotation"
+                )
+                Box(
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable { showPathMenu = true }
+                        .testTag("path_selector_button"),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = Sand,
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Forest900),
+                        shadowElevation = 3.dp
                     ) {
-                        ExpeditionIconCompass(
-                            modifier = Modifier.size(16.dp),
-                            tint = DeepForestGreen,
-                            accentTint = PureWhite
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = selectedPath.code,
-                            fontFamily = CinzelFontFamily,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = DeepForestGreen,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ExpeditionIconCompass(
+                                modifier = Modifier.size(16.dp),
+                                tint = Forest900,
+                                accentTint = PureWhite
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = selectedPath.code,
+                                fontFamily = CinzelFontFamily,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Forest900,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Pilih jalur belajar",
+                                tint = Forest900,
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .rotate(chevronRotation)
+                            )
+                        }
                     }
                 }
 
                 DropdownMenu(
                     expanded = showPathMenu,
-                    onDismissRequest = { showPathMenu = false }
+                    onDismissRequest = { showPathMenu = false },
+                    containerColor = PureWhite,
+                    shape = RoundedCornerShape(16.dp),
+                    shadowElevation = 10.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Forest700),
+                    modifier = Modifier
+                        .widthIn(min = 256.dp, max = 308.dp)
+                        .testTag("path_selector_menu")
                 ) {
-                    LearningPath.values().forEach { path ->
-                        val isAllowed = profile?.currentPath?.canAccess(path) == true
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "PILIH JALUR BELAJAR",
+                            fontFamily = CinzelFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.sp,
+                            color = Forest700,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                        HorizontalDivider(color = Sage.copy(alpha = 0.45f))
+
+                        LearningPath.values().forEach { path ->
+                            val isAllowed = profile?.currentPath?.canAccess(path) == true
+                            val isSelected = path == selectedPath
+
+                            val cardBg = when {
+                                !isAllowed -> DisabledBg
+                                isSelected -> HoneyTint
+                                else -> PureWhite
+                            }
+                            val cardBorder = when {
+                                !isAllowed -> Sage.copy(alpha = 0.75f)
+                                isSelected -> HoneyPressed
+                                else -> Sage
+                            }
+                            val titleColor = if (isAllowed) Forest900 else DisabledFg
+                            val descColor = if (isAllowed) SageDark else DisabledFg
+
+                            Surface(
+                                onClick = {
+                                    if (isAllowed) {
+                                        showPathMenu = false
+                                        onPathSelected(path)
+                                    }
+                                },
+                                enabled = isAllowed,
+                                shape = RoundedCornerShape(12.dp),
+                                color = cardBg,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = cardBorder
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .testTag("tier_option_${path.code.lowercase()}")
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Text(
-                                            text = "${path.title} (${path.cefrLabel})",
+                                            text = path.title,
                                             fontFamily = CinzelFontFamily,
-                                            fontWeight = if (path == selectedPath) FontWeight.Bold else FontWeight.Normal,
-                                            color = DeepForestGreen
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = titleColor,
+                                            modifier = Modifier.weight(1f, fill = false)
                                         )
-                                        if (!isAllowed) {
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            ExpeditionIconLock(modifier = Modifier.size(12.dp), tint = SageGreen)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        when {
+                                            isSelected -> {
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = LeafTint,
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Leaf)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.CheckCircle,
+                                                            contentDescription = "Aktif",
+                                                            tint = Leaf,
+                                                            modifier = Modifier.size(12.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            text = "Aktif",
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Leaf
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            !isAllowed -> {
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = PureWhite,
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Sage)
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        ExpeditionIconLock(
+                                                            modifier = Modifier.size(11.dp),
+                                                            tint = DisabledFg
+                                                        )
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            text = "Terkunci",
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            color = DisabledFg
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            else -> {
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = LagoonTint,
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Lagoon.copy(alpha = 0.45f))
+                                                ) {
+                                                    Text(
+                                                        text = "Tersedia",
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Lagoon,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = if (isAllowed) Forest700 else SageDark
+                                        ) {
+                                            Text(
+                                                text = path.cefrLabel,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = PureWhite,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        Text(
+                                            text = "${path.targetWordsPerDay} kata/hari",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = descColor
+                                        )
+                                    }
+
                                     Text(
                                         text = path.description,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = SageGreen
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        color = descColor
                                     )
                                 }
-                            },
-                            onClick = {
-                                showPathMenu = false
-                                if (isAllowed) {
-                                    onPathSelected(path)
-                                }
-                            },
-                            enabled = isAllowed
-                        )
+                            }
+                        }
                     }
                 }
             }
@@ -477,7 +708,7 @@ fun ExplorerTopBar(
                 IconButton(
                     onClick = onToggleSound,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(44.dp)
                         .testTag("sound_toggle_button")
                 ) {
                     ExpeditionIconSound(
@@ -491,7 +722,7 @@ fun ExplorerTopBar(
                 IconButton(
                     onClick = onLogoutClick,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(44.dp)
                         .testTag("logout_icon_button")
                 ) {
                     ExpeditionIconExit(
@@ -550,11 +781,11 @@ fun ExplorerBottomNavBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = DeepForestGreen,
-                    selectedTextColor = SandGold,
-                    indicatorColor = SandGold,
-                    unselectedIconColor = Cream.copy(alpha = 0.65f),
-                    unselectedTextColor = Cream.copy(alpha = 0.65f)
+                    selectedIconColor = Forest900,
+                    selectedTextColor = Sand,
+                    indicatorColor = Sand,
+                    unselectedIconColor = Cream.copy(alpha = 0.85f),
+                    unselectedTextColor = Cream.copy(alpha = 0.85f)
                 ),
                 modifier = Modifier.testTag("nav_tab_$route")
             )

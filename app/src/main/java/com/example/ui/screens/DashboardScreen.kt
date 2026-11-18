@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,15 +7,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -90,44 +87,22 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Subtle Perimeter Surveyor Border & Grain Simulation
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val margin = 10.dp.toPx()
-                val w = size.width
-                val h = size.height
-
-                // Double inked surveyor border in Sage Green
-                drawRect(
-                    color = SageGreen.copy(alpha = 0.35f),
-                    topLeft = Offset(margin, margin),
-                    size = androidx.compose.ui.geometry.Size(w - 2 * margin, h - 2 * margin),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
-                    )
-                )
-                // Corner surveyor crosshairs
-                val cross = 12.dp.toPx()
-                drawLine(SageGreen.copy(alpha = 0.6f), Offset(margin - cross / 2, margin), Offset(margin + cross / 2, margin), 1.5.dp.toPx())
-                drawLine(SageGreen.copy(alpha = 0.6f), Offset(margin, margin - cross / 2), Offset(margin, margin + cross / 2), 1.5.dp.toPx())
-                drawLine(SageGreen.copy(alpha = 0.6f), Offset(w - margin - cross / 2, margin), Offset(w - margin + cross / 2, margin), 1.5.dp.toPx())
-                drawLine(SageGreen.copy(alpha = 0.6f), Offset(w - margin, margin - cross / 2), Offset(w - margin, margin + cross / 2), 1.5.dp.toPx())
-            }
-
             Column(
                 modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .align(Alignment.TopCenter)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // =========================================================================
-                // 1. ADVENTURER DOSSIER SHEET (Tilted -1.2° with Hand-Inked Brass Frame)
+                // 1. ADVENTURER DOSSIER SHEET
                 // =========================================================================
                 ParchmentDossierCard(
-                    rotation = -1.2f,
+                    rotation = 0f,
                     backgroundColor = PureWhite,
-                    borderColor = SageGreen
+                    borderColor = Sage
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -177,12 +152,12 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                ExpeditionIconCompass(modifier = Modifier.size(13.dp), tint = SageGreen)
+                                ExpeditionIconCompass(modifier = Modifier.size(13.dp), tint = Leaf)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "${profile?.currentPath?.title ?: "Beginner"} • ${profile?.currentPath?.cefrLabel}",
                                     fontFamily = CinzelFontFamily,
-                                    color = DeepForestGreen,
+                                    color = Forest900,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 12.sp,
                                     letterSpacing = 0.5.sp
@@ -192,10 +167,38 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             Text(
                                 text = "Daily Target: $totalAssignedVocab words • Max 3 waypoints/day",
                                 fontFamily = JakartaFontFamily,
-                                color = DeepForestGreen.copy(alpha = 0.8f),
+                                color = SageDark,
                                 fontSize = 11.sp
                             )
                         }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.replayMapGuide() },
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Sage),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = CreamSoft,
+                            contentColor = Forest900
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 48.dp)
+                            .testTag("camp_replay_guide_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = null,
+                            tint = Forest700,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Putar Ulang Panduan Peta",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Forest900
+                        )
                     }
                 }
 
@@ -270,9 +273,9 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        ExpeditionIconBook(modifier = Modifier.size(14.dp), tint = DeepForestGreen)
+                                        ExpeditionIconBook(modifier = Modifier.size(14.dp), tint = Forest700)
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("VOCABULARY", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageGreen, fontWeight = FontWeight.Bold)
+                                        Text("VOCABULARY", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageDark, fontWeight = FontWeight.Bold)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -280,15 +283,15 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                                         fontFamily = CinzelFontFamily,
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = DeepForestGreen
+                                        color = Forest900
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        ExpeditionIconCheckmark(modifier = Modifier.size(12.dp))
+                                        ExpeditionIconCheckmark(modifier = Modifier.size(12.dp), tint = Leaf)
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("$completedVocabCount Active", fontSize = 11.sp, color = DeepForestGreen, fontWeight = FontWeight.SemiBold)
+                                        Text("$completedVocabCount Active", fontSize = 11.sp, color = Forest900, fontWeight = FontWeight.SemiBold)
                                     }
-                                    Text("Mastered: $masteredVocabCount", fontSize = 11.sp, color = DeepForestGreen.copy(alpha = 0.85f))
+                                    Text("Mastered: $masteredVocabCount", fontSize = 11.sp, color = SageDark)
                                 }
                             }
 
@@ -298,15 +301,15 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                                 color = PureWhite,
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.5.dp,
-                                    if (dailyLevelsCompleted >= 3) SandGold else SageGreen
+                                    if (dailyLevelsCompleted >= 3) Leaf else Sage
                                 ),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        ExpeditionIconMap(modifier = Modifier.size(14.dp), tint = DeepForestGreen)
+                                        ExpeditionIconMap(modifier = Modifier.size(14.dp), tint = Forest700)
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("DAILY WAYPOINTS", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageGreen, fontWeight = FontWeight.Bold)
+                                        Text("DAILY WAYPOINTS", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageDark, fontWeight = FontWeight.Bold)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -314,7 +317,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                                         fontFamily = CinzelFontFamily,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (dailyLevelsCompleted >= 3) DeepForestGreen else DeepForestGreen
+                                        color = Forest900
                                     )
 
                                     // Winding Trail Waypoint Progress
@@ -327,7 +330,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                                     Text(
                                         text = if (remainingDailyLevels == 0) "Daily Limit Reached ✓" else "$remainingDailyLevels Waypoints Left",
                                         fontSize = 11.sp,
-                                        color = if (remainingDailyLevels == 0) Color(0xFF2D5A27) else DeepForestGreen,
+                                        color = if (remainingDailyLevels == 0) Leaf else Forest900,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -406,17 +409,17 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 )
 
                 // =========================================================================
-                // 4. STAMPED WAX MEDAL STATS ROW (Asymmetrical Rotations +1° & -1°)
+                // 4. STAMPED WAX MEDAL STATS ROW
                 // =========================================================================
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Streak Card (Tilted +1.2°)
+                    // Streak Card
                     ParchmentDossierCard(
-                        rotation = 1.2f,
+                        rotation = 0f,
                         backgroundColor = PureWhite,
-                        borderColor = SageGreen,
+                        borderColor = Sage,
                         modifier = Modifier.weight(1f)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -435,7 +438,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             Text(
                                 text = "STREAK",
                                 fontFamily = CinzelFontFamily,
-                                color = SageGreen,
+                                color = SageDark,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -446,21 +449,21 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             fontFamily = CinzelFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            color = DeepForestGreen
+                            color = Forest900
                         )
                         Text(
                             text = "Best: ${profile?.bestStreak ?: 0} days record",
                             fontFamily = JakartaFontFamily,
-                            color = DeepForestGreen.copy(alpha = 0.75f),
+                            color = SageDark,
                             fontSize = 11.sp
                         )
                     }
 
-                    // Total Stars Card (Tilted -1.2°)
+                    // Total Stars Card
                     ParchmentDossierCard(
-                        rotation = -1.2f,
+                        rotation = 0f,
                         backgroundColor = PureWhite,
-                        borderColor = SageGreen,
+                        borderColor = Sage,
                         modifier = Modifier.weight(1f)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -479,7 +482,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             Text(
                                 text = "STARS",
                                 fontFamily = CinzelFontFamily,
-                                color = SageGreen,
+                                color = SageDark,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -490,12 +493,12 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                             fontFamily = CinzelFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            color = DeepForestGreen
+                            color = Forest900
                         )
                         Text(
                             text = "$completedLevels / 50 levels charted",
                             fontFamily = JakartaFontFamily,
-                            color = DeepForestGreen.copy(alpha = 0.75f),
+                            color = SageDark,
                             fontSize = 11.sp
                         )
                     }
@@ -505,9 +508,9 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 // 5. WORLD EXPEDITION ROUTE (50 Levels — Charted Path)
                 // =========================================================================
                 ParchmentDossierCard(
-                    rotation = 0.6f,
+                    rotation = 0f,
                     backgroundColor = PureWhite,
-                    borderColor = SageGreen
+                    borderColor = Sage
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -530,10 +533,10 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "5 Chapters × 10 Levels = 50 Waypoints. Daily 3-level pace maintains long-term fluency.",
+                        text = "5 Chapters × 10 Levels • Target 3 levels/day.",
                         fontFamily = JakartaFontFamily,
                         fontSize = 12.sp,
-                        color = DeepForestGreen.copy(alpha = 0.85f)
+                        color = SageDark
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -549,11 +552,11 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Woods", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageGreen)
-                        Text(text = "Peaks", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageGreen)
-                        Text(text = "Valley", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageGreen)
-                        Text(text = "Sands", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageGreen)
-                        Text(text = "Frontier", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = DeepForestGreen, fontWeight = FontWeight.Bold)
+                        Text(text = "Woods", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageDark, fontWeight = FontWeight.SemiBold)
+                        Text(text = "Peaks", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageDark, fontWeight = FontWeight.SemiBold)
+                        Text(text = "Valley", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageDark, fontWeight = FontWeight.SemiBold)
+                        Text(text = "Sands", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = SageDark, fontWeight = FontWeight.SemiBold)
+                        Text(text = "Frontier", fontFamily = CinzelFontFamily, fontSize = 10.sp, color = Forest900, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -561,9 +564,9 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                 // 6. SURVEYOR'S ACTIVE LEARNING PATH SELECTOR
                 // =========================================================================
                 ParchmentDossierCard(
-                    rotation = -0.5f,
+                    rotation = 0f,
                     backgroundColor = PureWhite,
-                    borderColor = SageGreen
+                    borderColor = Sage
                 ) {
                     Text(
                         text = "ACTIVE EXPEDITION CADENCE",
@@ -620,7 +623,7 @@ fun DashboardScreen(viewModel: WordExplorerViewModel) {
                                     Text(
                                         text = "$targetWords words daily • ${path.uiLanguage}",
                                         fontFamily = JakartaFontFamily,
-                                        color = DeepForestGreen.copy(alpha = 0.8f),
+                                        color = SageDark,
                                         fontSize = 12.sp
                                     )
                                 }

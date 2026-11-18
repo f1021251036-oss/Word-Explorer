@@ -1,0 +1,20 @@
+{
+  "name": "Word Explorer — Petualangan Kosakata SMP",
+  "short_name": "Word Explorer",
+  "description": "Aplikasi belajar kosakata bahasa Inggris bertema petualangan untuk siswa SMP di browser.",
+  "start_url": "/map",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#17384F",
+  "background_color": "#0B2236",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.speech.tts.TextToSpeech
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -123,6 +124,12 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
     val selectedRegion = MutableStateFlow<ExplorationRegion?>(null)
     val showRegionModal = MutableStateFlow(false)
 
+    // First-time map guide ("What should I do first?") — persisted once-only per user
+    private val guidePrefs = application.getSharedPreferences("word_explorer_guide", Context.MODE_PRIVATE)
+    val showFirstTimeGuide = MutableStateFlow(false)
+    val firstTimeGuideStep = MutableStateFlow(0)
+    val isNextStepChipDismissed = MutableStateFlow(false)
+
     // Daily Adventure Limit (3 Levels/Day) & Countdown to Midnight
     val dailyCompletedLevelsCount = MutableStateFlow(0)
     val dailyLimitErrorMessage = MutableStateFlow<String?>(null)
@@ -140,6 +147,7 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
     val matchingAnswers = mutableStateMapOf<String, String>() // English -> Indonesian
     val typedAnswer = MutableStateFlow("")
     val showTypingHint = MutableStateFlow(false)
+    val clueStep = MutableStateFlow(0) // 0 = closed, 1 = clue (function/use), 2 = clue2 (extra detail + letter count)
     val scrambledSlots = mutableStateListOf<String>()
     val availableLetters = mutableStateListOf<Pair<Int, String>>() // id to char
 
@@ -443,7 +451,53 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
             activeSentCode.value = null
             dailyCompletedLevelsCount.value = 0
             dailyLimitErrorMessage.value = null
+            showFirstTimeGuide.value = false
+            firstTimeGuideStep.value = 0
+            isNextStepChipDismissed.value = false
         }
+    }
+
+    private fun refreshGuideStateForUser(userId: String) {
+        val guideDone = guidePrefs.getBoolean("first_time_guide_done_$userId", false)
+        val chipDismissed = guidePrefs.getBoolean("next_step_hint_dismissed_$userId", false)
+        isNextStepChipDismissed.value = chipDismissed
+        firstTimeGuideStep.value = 0
+        showFirstTimeGuide.value = !guideDone
+    }
+
+    fun advanceFirstTimeGuideStep() {
+        val current = firstTimeGuideStep.value
+        if (current < 2) {
+            firstTimeGuideStep.value = current + 1
+        } else {
+            completeFirstTimeGuide(openFirstLevel = true)
+        }
+    }
+
+    fun completeFirstTimeGuide(openFirstLevel: Boolean = false) {
+        val userId = _currentUser.value?.id ?: "guest"
+        guidePrefs.edit().putBoolean("first_time_guide_done_$userId", true).apply()
+        showFirstTimeGuide.value = false
+        firstTimeGuideStep.value = 0
+        if (openFirstLevel) {
+            val targetLevel = levelsForCurrentPath.value.lastOrNull { it.status == LevelStatus.AVAILABLE }
+                ?: levelsForCurrentPath.value.firstOrNull()
+            targetLevel?.let { selectLevel(it) }
+        }
+    }
+
+    fun dismissNextStepHint() {
+        val userId = _currentUser.value?.id ?: "guest"
+        guidePrefs.edit().putBoolean("next_step_hint_dismissed_$userId", true).apply()
+        isNextStepChipDismissed.value = true
+    }
+
+    fun replayMapGuide() {
+        showLevelModal.value = false
+        showRegionModal.value = false
+        firstTimeGuideStep.value = 0
+        showFirstTimeGuide.value = true
+        currentAppScreen.value = "map"
     }
 
     private fun onUserAuthenticated(user: UserEntity) {
@@ -456,8 +510,9 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
                 currentAppScreen.value = "onboarding"
             } else {
                 selectedMapPath.value = profile.currentPath
-                currentAppScreen.value = "map"
                 loadLevelsForPath(user.id, profile.currentPath)
+                refreshGuideStateForUser(user.id)
+                currentAppScreen.value = "map"
             }
 
             // Observe daily completed levels count (Strict 3 levels/day limit)
@@ -551,6 +606,7 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
             loadLevelsForPath(user.id, path)
             // Initialize Daily Vocabulary for assigned path
             repository.getOrCreateDailyVocabSet(user.id, path)
+            refreshGuideStateForUser(user.id)
             currentAppScreen.value = "map"
         }
     }
@@ -647,6 +703,7 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
         matchingAnswers.clear()
         typedAnswer.value = ""
         showTypingHint.value = false
+        clueStep.value = 0
         scrambledSlots.clear()
         availableLetters.clear()
         sentenceBuilderSlots.clear()
@@ -704,6 +761,17 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
 
     fun toggleTypingHint() {
         showTypingHint.value = !showTypingHint.value
+        clueStep.value = if (showTypingHint.value) 1 else 0
+        soundManager.playClick()
+    }
+
+    fun advanceClueStep() {
+        clueStep.value = when (clueStep.value) {
+            0 -> 1
+            1 -> 2
+            else -> 0
+        }
+        showTypingHint.value = clueStep.value > 0
         soundManager.playClick()
     }
 
@@ -880,7 +948,27 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
                 val tappedChars = selectedGridCoords.mapNotNull { (r, c) ->
                     grid.getOrNull(r)?.getOrNull(c)
                 }.joinToString("")
-                tappedChars.equals(currentQ.correctAnswer, ignoreCase = true)
+
+                val spellsTarget = tappedChars.equals(currentQ.correctAnswer, ignoreCase = true)
+
+                // Validate CELL POSITIONS: selected cells must form a contiguous straight line
+                val isContiguousLine = if (selectedGridCoords.size <= 1) {
+                    selectedGridCoords.isNotEmpty()
+                } else {
+                    val dr = selectedGridCoords[1].first - selectedGridCoords[0].first
+                    val dc = selectedGridCoords[1].second - selectedGridCoords[0].second
+                    val validStep = Math.abs(dr) <= 1 && Math.abs(dc) <= 1 && (dr != 0 || dc != 0)
+                    if (!validStep) false
+                    else {
+                        (1 until selectedGridCoords.size).all { idx ->
+                            val rDiff = selectedGridCoords[idx].first - selectedGridCoords[idx - 1].first
+                            val cDiff = selectedGridCoords[idx].second - selectedGridCoords[idx - 1].second
+                            rDiff == dr && cDiff == dc
+                        }
+                    }
+                }
+
+                spellsTarget && isContiguousLine
             }
             QuestionType.PICTURE_TAP,
             QuestionType.IMAGE_VOCABULARY,
@@ -908,10 +996,40 @@ class WordExplorerViewModel(application: Application) : AndroidViewModel(applica
             }
         }
 
+        var specificFailureMsg = currentQ.failureFeedback
+        if (!isCorrect && currentQ.type == QuestionType.CATEGORY_SORT) {
+            val buckets = currentQ.categoryBuckets ?: emptyMap()
+            val misplaced = mutableListOf<String>()
+            buckets.forEach { (bucketName, expectedWords) ->
+                expectedWords.forEach { word ->
+                    val assigned = categoryBucketAssignments[word]
+                    if (assigned != bucketName) {
+                        if (assigned != null) {
+                            misplaced.add("'$word' seharusnya di '$bucketName', bukan '$assigned'")
+                        } else {
+                            misplaced.add("'$word' belum ditempatkan ke '$bucketName'")
+                        }
+                    }
+                }
+            }
+            if (misplaced.isNotEmpty()) {
+                specificFailureMsg = "Pengelompokan belum tepat: " + misplaced.joinToString("; ") + "."
+            }
+        }
+
+        val updatedCurrentQ = if (specificFailureMsg != null && specificFailureMsg != currentQ.failureFeedback) {
+            currentQ.copy(failureFeedback = specificFailureMsg)
+        } else currentQ
+
+        val updatedQuestions = if (updatedCurrentQ !== currentQ) {
+            state.questions.toMutableList().also { it[state.currentQuestionIndex] = updatedCurrentQ }
+        } else state.questions
+
         val newScore = if (isCorrect) state.firstAttemptScore + 1 else state.firstAttemptScore
-        val newFailed = if (!isCorrect) state.failedQuestions + currentQ else state.failedQuestions
+        val newFailed = if (!isCorrect) state.failedQuestions + updatedCurrentQ else state.failedQuestions
 
         quizState.value = state.copy(
+            questions = updatedQuestions,
             isAnswerChecked = true,
             isAnswerCorrect = isCorrect,
             firstAttemptScore = newScore,

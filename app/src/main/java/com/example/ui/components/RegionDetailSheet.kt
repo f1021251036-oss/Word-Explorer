@@ -72,9 +72,9 @@ fun RegionDetailSheet(
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = when {
-                            !isUnlocked -> SageGreen.copy(alpha = 0.5f)
-                            isAllCompleted -> DeepForestGreen
-                            else -> SandGold
+                            !isUnlocked -> DisabledBg
+                            isAllCompleted -> Leaf
+                            else -> Sand
                         }
                     ) {
                         Text(
@@ -84,9 +84,9 @@ fun RegionDetailSheet(
                                 else -> "ACTIVE"
                             },
                             color = when {
-                                !isUnlocked -> PureWhite
-                                isAllCompleted -> SandGold
-                                else -> DeepForestGreen
+                                !isUnlocked -> DisabledFg
+                                isAllCompleted -> PureWhite
+                                else -> Forest900
                             },
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
@@ -144,22 +144,22 @@ fun RegionDetailSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Levels Selesai", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text("$completedCount / 10", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Levels Selesai", color = SageDark, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("$completedCount / 10", color = Forest900, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Bintang Wilayah", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Bintang Wilayah", color = SageDark, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("⭐", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("$totalStars / 30", color = DeepForestGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("$totalStars / 30", color = Forest900, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Status", color = SageGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Status", color = SageDark, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             text = if (isUnlocked) "Terbuka" else "Terkunci",
-                            color = if (isUnlocked) DeepForestGreen else SemanticRed,
+                            color = if (isUnlocked) Leaf else Terracotta,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
@@ -178,16 +178,17 @@ fun RegionDetailSheet(
                         .height(52.dp)
                         .testTag("enter_region_button"),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = DeepForestGreen,
-                        contentColor = PureWhite
+                        containerColor = Honey,
+                        contentColor = Forest900
                     ),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Forest900),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Icon(Icons.Default.Explore, contentDescription = null, tint = PureWhite)
+                    Icon(Icons.Default.Explore, contentDescription = null, tint = Forest900)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Masuki Wilayah ${region.name}",
-                        color = PureWhite,
+                        color = Forest900,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )

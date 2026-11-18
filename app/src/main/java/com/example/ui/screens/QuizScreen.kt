@@ -504,7 +504,7 @@ fun MainQuizContent(
                 color = PureWhite,
                 border = androidx.compose.foundation.BorderStroke(
                     1.5.dp,
-                    if (state.isAnswerCorrect) Color(0xFF2D5A27) else Color(0xFFA8422B)
+                    if (state.isAnswerCorrect) Leaf else Terracotta
                 ),
                 shadowElevation = 3.dp,
                 modifier = Modifier
@@ -515,12 +515,12 @@ fun MainQuizContent(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (state.isAnswerCorrect) {
                             ExpeditionIconCheckmark(
-                                tint = Color(0xFF2D5A27),
+                                tint = Leaf,
                                 modifier = Modifier.size(20.dp)
                             )
                         } else {
                             ExpeditionIconCross(
-                                tint = Color(0xFFA8422B),
+                                tint = Terracotta,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -529,14 +529,14 @@ fun MainQuizContent(
                             text = if (state.isAnswerCorrect) "Langkah Tepat Terverifikasi!" else "Analisis Jalur Kurang Tepat!",
                             fontFamily = CinzelFontFamily,
                             fontWeight = FontWeight.Bold,
-                            color = if (state.isAnswerCorrect) Color(0xFF2D5A27) else Color(0xFFA8422B),
+                            color = if (state.isAnswerCorrect) Leaf else Terracotta,
                             fontSize = 14.sp
                         )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = currentQ.explanation,
+                        text = if (state.isAnswerCorrect) currentQ.explanation else (currentQ.failureFeedback ?: currentQ.explanation),
                         color = DeepForestGreen,
                         fontSize = 13.sp,
                         lineHeight = 20.sp
@@ -708,7 +708,7 @@ fun DragAndMatchRenderer(
                                     )
                                     if (!isAnswerChecked) {
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(text = "(Batal)", fontSize = 9.sp, color = SageGreen)
+                                        Text(text = "(Batal)", fontSize = 9.sp, color = SageDark)
                                     }
                                 }
                             }
@@ -742,7 +742,7 @@ fun FillBlankRenderer(
                     text = "LENGKAPI LOG KALIMAT SURVEYOR:",
                     fontFamily = CinzelFontFamily,
                     fontSize = 11.sp,
-                    color = SageGreen,
+                    color = SageDark,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 )
@@ -757,41 +757,19 @@ fun FillBlankRenderer(
             }
         }
 
-        // Emerged input field
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = PureWhite,
-            shadowElevation = 4.dp,
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = typed,
-                onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
-                label = { Text("Ketik kata bahasa Inggris...", color = SageGreen) },
-                enabled = !isAnswerChecked,
-                trailingIcon = {
-                    IconButton(onClick = { viewModel.speakWord(question.correctAnswer) }) {
-                        ExpeditionIconSound(isEnabled = true, tint = DeepForestGreen, modifier = Modifier.size(18.dp))
-                    }
-                },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedBorderColor = DeepForestGreen,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedTextColor = DeepForestGreen,
-                    unfocusedTextColor = DeepForestGreen,
-                    focusedLabelColor = DeepForestGreen,
-                    unfocusedLabelColor = SageGreen
-                ),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("fill_blank_input_field")
-            )
-        }
+        // Emerged input field (Single Crisp Border, no notch cut)
+        ExpeditionTextInputField(
+            value = typed,
+            onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
+            placeholderText = "Ketik kata bahasa Inggris...",
+            enabled = !isAnswerChecked,
+            trailingIcon = {
+                IconButton(onClick = { viewModel.speakWord(question.correctAnswer) }) {
+                    ExpeditionIconSound(isEnabled = true, tint = DeepForestGreen, modifier = Modifier.size(18.dp))
+                }
+            },
+            testTag = "fill_blank_input_field"
+        )
 
         if (isAnswerChecked) {
             Text(
@@ -841,7 +819,7 @@ fun WordUnscrambleRenderer(
                 if (slots.isEmpty()) {
                     Text(
                         text = "Ketuk huruf-huruf di bawah...",
-                        color = SageGreen,
+                        color = SageDark,
                         fontSize = 13.sp
                     )
                 } else {
@@ -976,19 +954,19 @@ fun ImageVocabularyRenderer(
                 onClick = { if (!isAnswerChecked) onOptionSelected(opt) },
                 shape = RoundedCornerShape(10.dp),
                 color = when {
-                    isAnswerChecked && isCorrect -> Color(0xFFE8F5E9)
-                    isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
-                    isSelected -> SandGold
+                    isAnswerChecked && isCorrect -> LeafTint
+                    isAnswerChecked && isSelected && !isAnswerCorrect -> TerracottaTint
+                    isSelected -> Sand
                     else -> PureWhite
                 },
                 shadowElevation = if (isSelected) 3.dp else 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
                     if (isSelected || isAnswerChecked) 2.dp else 1.5.dp,
                     when {
-                        isAnswerChecked && isCorrect -> Color(0xFF2D5A27) // Leaf green
-                        isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B) // Terracotta
-                        isSelected -> DeepForestGreen
-                        else -> SageGreen
+                        isAnswerChecked && isCorrect -> Leaf
+                        isAnswerChecked && isSelected && !isAnswerCorrect -> Terracotta
+                        isSelected -> Forest900
+                        else -> Sage
                     }
                 ),
                 modifier = Modifier
@@ -1017,17 +995,17 @@ fun ImageVocabularyRenderer(
                     Text(
                         text = opt,
                         color = when {
-                            isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B)
-                            else -> DeepForestGreen
+                            isAnswerChecked && isSelected && !isAnswerCorrect -> Terracotta
+                            else -> Forest900
                         },
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(1f)
                     )
                     if (isAnswerChecked && isCorrect) {
-                        ExpeditionIconCheckmark(tint = Color(0xFF2D5A27), modifier = Modifier.size(18.dp))
+                        ExpeditionIconCheckmark(tint = Leaf, modifier = Modifier.size(18.dp))
                     } else if (isAnswerChecked && isSelected && !isAnswerCorrect) {
-                        ExpeditionIconCross(tint = Color(0xFFA8422B), modifier = Modifier.size(18.dp))
+                        ExpeditionIconCross(tint = Terracotta, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -1053,19 +1031,19 @@ fun SentenceCompletionRenderer(
                 onClick = { if (!isAnswerChecked) onOptionSelected(opt) },
                 shape = RoundedCornerShape(10.dp),
                 color = when {
-                    isAnswerChecked && isCorrect -> Color(0xFFE8F5E9)
-                    isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
-                    isSelected -> SandGold
+                    isAnswerChecked && isCorrect -> LeafTint
+                    isAnswerChecked && isSelected && !isAnswerCorrect -> TerracottaTint
+                    isSelected -> Sand
                     else -> PureWhite
                 },
                 shadowElevation = if (isSelected) 3.dp else 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
                     if (isSelected || isAnswerChecked) 2.dp else 1.5.dp,
                     when {
-                        isAnswerChecked && isCorrect -> Color(0xFF2D5A27) // Leaf green
-                        isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B) // Terracotta
-                        isSelected -> DeepForestGreen
-                        else -> SageGreen
+                        isAnswerChecked && isCorrect -> Leaf
+                        isAnswerChecked && isSelected && !isAnswerCorrect -> Terracotta
+                        isSelected -> Forest900
+                        else -> Sage
                     }
                 ),
                 modifier = Modifier
@@ -1094,17 +1072,17 @@ fun SentenceCompletionRenderer(
                     Text(
                         text = opt,
                         color = when {
-                            isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B)
-                            else -> DeepForestGreen
+                            isAnswerChecked && isSelected && !isAnswerCorrect -> Terracotta
+                            else -> Forest900
                         },
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(1f)
                     )
                     if (isAnswerChecked && isCorrect) {
-                        ExpeditionIconCheckmark(tint = Color(0xFF2D5A27), modifier = Modifier.size(18.dp))
+                        ExpeditionIconCheckmark(tint = Leaf, modifier = Modifier.size(18.dp))
                     } else if (isAnswerChecked && isSelected && !isAnswerCorrect) {
-                        ExpeditionIconCross(tint = Color(0xFFA8422B), modifier = Modifier.size(18.dp))
+                        ExpeditionIconCross(tint = Terracotta, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -1205,19 +1183,19 @@ fun RemedialTaskContent(
                 onClick = { if (!state.isRemedialChecked) onOptionSelected(opt) },
                 shape = RoundedCornerShape(10.dp),
                 color = when {
-                    state.isRemedialChecked && isCorrect -> PureWhite
-                    state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> PureWhite
-                    isSelected -> SandGold
+                    state.isRemedialChecked && isCorrect -> LeafTint
+                    state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> TerracottaTint
+                    isSelected -> Sand
                     else -> PureWhite
                 },
                 shadowElevation = if (isSelected) 3.dp else 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
                     if (isSelected || state.isRemedialChecked) 2.dp else 1.5.dp,
                     when {
-                        state.isRemedialChecked && isCorrect -> Color(0xFF2D5A27)
-                        state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> Color(0xFFA8422B)
-                        isSelected -> DeepForestGreen
-                        else -> SageGreen
+                        state.isRemedialChecked && isCorrect -> Leaf
+                        state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> Terracotta
+                        isSelected -> Forest900
+                        else -> Sage
                     }
                 ),
                 modifier = Modifier
@@ -1247,8 +1225,8 @@ fun RemedialTaskContent(
                     Text(
                         text = opt,
                         color = when {
-                            state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> Color(0xFFA8422B)
-                            else -> DeepForestGreen
+                            state.isRemedialChecked && isSelected && !state.isRemedialCorrect -> Terracotta
+                            else -> Forest900
                         },
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp
@@ -1279,7 +1257,7 @@ fun RemedialTaskContent(
             TactileSignpostButton(
                 label = "COBA LAGI",
                 onClick = onRetry,
-                backgroundColor = Color(0xFFA8422B),
+                backgroundColor = Terracotta,
                 testTag = "remedial_retry_button",
                 modifier = Modifier.fillMaxWidth()
             )
@@ -1334,7 +1312,7 @@ fun LevelCelebrationContent(
                     fontFamily = CinzelFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = SageGreen,
+                    color = SageDark,
                     letterSpacing = 2.sp
                 )
 
@@ -1410,14 +1388,5 @@ fun LevelCelebrationContent(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        TactileSignpostButton(
-            label = "KEMBALI KE PETA PETUALANGAN",
-            onClick = onBackToMap,
-            testTag = "celebration_continue_button",
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }

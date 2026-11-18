@@ -44,11 +44,11 @@ fun EmergedInputFieldContainer(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        color = Color(0xFF143327), // Deep dark container background
+        color = Forest700, // Distinct container over Forest900 card
         shadowElevation = 8.dp, // Distinct 3D emerged shadow
         border = androidx.compose.foundation.BorderStroke(
             2.dp, // Distinct emerged outline shape for email, name, and password
-            Color(0xFF4A7D65) // Crisp raised border outline that emerges clearly from the surface
+            DarkBorderSubtle // Crisp raised border outline that emerges clearly from the surface
         )
     ) {
         content()
@@ -109,7 +109,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color(0xCC0F261E))
+                                colors = listOf(Color.Transparent, ShadowDark.copy(alpha = 0.85f))
                             )
                         )
                 )
@@ -153,7 +153,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF1E4637))
+                                .background(Forest500)
                                 .padding(4.dp)
                         ) {
                             val isLogin = authState == AuthScreenState.Login
@@ -164,8 +164,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                     viewModel.authScreenState.value = AuthScreenState.Login
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isLogin) AdventureOrange else Color.Transparent,
-                                    contentColor = if (isLogin) Color.White else ExplorerCream
+                                    containerColor = if (isLogin) Honey else Color.Transparent,
+                                    contentColor = if (isLogin) Forest900 else Cream
                                 ),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
@@ -181,8 +181,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                     viewModel.authScreenState.value = AuthScreenState.Register
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (!isLogin) AdventureOrange else Color.Transparent,
-                                    contentColor = if (!isLogin) Color.White else ExplorerCream
+                                    containerColor = if (!isLogin) Honey else Color.Transparent,
+                                    contentColor = if (!isLogin) Forest900 else Cream
                                 ),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
@@ -198,7 +198,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                     // Feedback messages
                     error?.let {
                         Surface(
-                            color = ErrorRed.copy(alpha = 0.2f),
+                            color = Terracotta.copy(alpha = 0.28f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TerracottaBright),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -206,7 +207,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         ) {
                             Text(
                                 text = "⚠️ $it",
-                                color = Color(0xFFFF8A80),
+                                color = TerracottaBright,
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(10.dp)
                             )
@@ -215,7 +216,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
 
                     successMsg?.let {
                         Surface(
-                            color = SuccessGreen.copy(alpha = 0.2f),
+                            color = Leaf.copy(alpha = 0.25f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, LeafBright),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -223,7 +225,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         ) {
                             Text(
                                 text = "✓ $it",
-                                color = Color(0xFFA5D6A7),
+                                color = LeafBright,
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(10.dp)
                             )
@@ -256,8 +258,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         // OTP Security Notice
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = Color(0x331E4637),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen),
+                            color = Forest700.copy(alpha = 0.7f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorderSubtle),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 12.dp)
@@ -286,8 +288,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         if (!backendStatus.isReadyForRealSmtp && sentCode != null) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = Color(0x22FFA000),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, GoldYellow.copy(alpha = 0.5f)),
+                                color = Honey.copy(alpha = 0.18f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Sand.copy(alpha = 0.65f)),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 12.dp)
@@ -347,7 +349,12 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                         Button(
                             onClick = { viewModel.verifyEmailCode() },
                             enabled = !isLoading && verificationCode.length == 6,
-                            colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Honey,
+                                contentColor = Forest900,
+                                disabledContainerColor = Forest500,
+                                disabledContentColor = SageLight
+                            ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -355,9 +362,14 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                 .testTag("verify_code_submit_button")
                         ) {
                             if (isLoading) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                                CircularProgressIndicator(color = Forest900, modifier = Modifier.size(24.dp))
                             } else {
-                                Text("Verifikasi OTP & Masuk", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                                Text(
+                                    "Verifikasi OTP & Masuk",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = if (!isLoading && verificationCode.length == 6) Forest900 else SageLight
+                                )
                             }
                         }
 
@@ -376,7 +388,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             ) {
                                 Text(
                                     text = if (cooldownSeconds > 0) "Kirim Ulang ($cooldownSeconds dtk)" else "Kirim Ulang OTP",
-                                    color = if (cooldownSeconds > 0) Color.Gray else ExplorerCream,
+                                    color = if (cooldownSeconds > 0) SageLight else Cream,
                                     fontSize = 13.sp
                                 )
                             }
@@ -527,9 +539,12 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                 }
                             },
                             enabled = !isLoading,
-                            colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Honey,
+                                contentColor = Forest900
+                            ),
                             shape = RoundedCornerShape(12.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, GoldYellow.copy(alpha = 0.8f)),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, Sand.copy(alpha = 0.9f)),
                             elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -537,7 +552,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                 .testTag("auth_submit_button")
                         ) {
                             if (isLoading) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                                CircularProgressIndicator(color = Forest900, modifier = Modifier.size(24.dp))
                             } else {
                                 Text(
                                     text = when (authState) {
@@ -548,7 +563,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                                     },
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
-                                    color = Color.White
+                                    color = Forest900
                                 )
                             }
                         }
@@ -569,14 +584,14 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFF285434))
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = DarkBorderSubtle)
                             Text(
                                 text = "  ATAU  ",
                                 color = ExplorerCream.copy(alpha = 0.9f),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFF285434))
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = DarkBorderSubtle)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -628,7 +643,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                 onClick = { viewModel.toggleBackendStatusDialog() },
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ExplorerCream),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B6350)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorderSubtle),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("backend_status_button")
@@ -643,7 +658,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
             // Footer note with high-contrast text that never blends with the background
             Text(
                 text = "Dirancang untuk siswa SMP belajar kosakata bahasa Inggris dengan seru dan mandiri.",
-                color = Color(0xFFFFF2B4), // High-contrast Cream (100% opacity)
+                color = Cream,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
@@ -657,9 +672,9 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
                 confirmButton = {
                     Button(
                         onClick = { viewModel.toggleBackendStatusDialog() },
-                        colors = ButtonDefaults.buttonColors(containerColor = AdventureOrange)
+                        colors = ButtonDefaults.buttonColors(containerColor = Honey, contentColor = Forest900)
                     ) {
-                        Text("Tutup", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Tutup", fontWeight = FontWeight.Bold, color = Forest900)
                     }
                 },
                 title = {
@@ -720,7 +735,7 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0x331E4637),
+                            color = Forest500.copy(alpha = 0.45f),
                             modifier = Modifier.padding(top = 6.dp)
                         ) {
                             Text(
@@ -742,8 +757,8 @@ fun AuthScreen(viewModel: WordExplorerViewModel) {
 private fun StatusItemRow(title: String, isConfigured: Boolean, details: String) {
     Surface(
         shape = RoundedCornerShape(8.dp),
-        color = if (isConfigured) Color(0x224A943E) else Color(0x22FFA000),
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (isConfigured) ForestGreen else GoldYellow.copy(alpha = 0.5f)),
+        color = if (isConfigured) Leaf.copy(alpha = 0.22f) else Honey.copy(alpha = 0.20f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isConfigured) LeafBright else Sand.copy(alpha = 0.65f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
@@ -757,7 +772,7 @@ private fun StatusItemRow(title: String, isConfigured: Boolean, details: String)
                     text = if (isConfigured) "AKTIF ✓" else "PENDING ⚠️",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isConfigured) Color(0xFFA5D6A7) else GoldYellow
+                    color = if (isConfigured) LeafBright else Sand
                 )
             }
             Spacer(modifier = Modifier.height(2.dp))

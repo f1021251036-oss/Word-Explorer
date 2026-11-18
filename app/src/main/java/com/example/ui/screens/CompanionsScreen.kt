@@ -58,50 +58,43 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Header Card
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = DeepForestGreen,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, SandGold),
-                shadowElevation = 3.dp,
-                modifier = Modifier.fillMaxWidth()
+            // Compact Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "🐾 Sahabat Hewan Petualang",
-                            fontWeight = FontWeight.Bold,
-                            color = SandGold,
-                            fontSize = 16.sp
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = SandGold
-                        ) {
-                            Text(
-                                text = "🔥 Streak: $currentStreak Hari",
-                                color = DeepForestGreen,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Selesaikan target belajar harian berturut-turut untuk membuka sahabat hewan baru. Sahabat aktif akan menemanimu di Explorer Map!",
-                        color = PureWhite,
+                        text = "Sahabat Hewan",
+                        fontFamily = CinzelFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Forest900,
+                        fontSize = 19.sp
+                    )
+                    Text(
+                        text = "Aktifkan hewan untuk menemanimu di peta.",
+                        color = SageDark,
+                        fontSize = 12.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Honey,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Forest900)
+                ) {
+                    Text(
+                        text = "🔥 $currentStreak Hari",
+                        color = Forest900,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
-                        lineHeight = 16.sp
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Grid of Companions
             LazyVerticalGrid(
@@ -169,14 +162,14 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                             Text(
                                 text = companion.name,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isUnlocked) DeepForestGreen else DeepForestGreen.copy(alpha = 0.5f),
+                                color = if (isUnlocked) Forest900 else SageDark,
                                 fontSize = 14.sp,
                                 textAlign = TextAlign.Center
                             )
 
                             Text(
                                 text = "${companion.species} • ${companion.trait}",
-                                color = SageGreen,
+                                color = Terracotta,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center
@@ -186,7 +179,7 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
 
                             Text(
                                 text = companion.description,
-                                color = DeepForestGreen.copy(alpha = 0.85f),
+                                color = SageDark,
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
                                 lineHeight = 15.sp
@@ -198,35 +191,37 @@ fun CompanionsScreen(viewModel: WordExplorerViewModel) {
                                 Button(
                                     onClick = { viewModel.equipCompanion(companion) },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isEquipped) SandGold else DeepForestGreen,
-                                        contentColor = if (isEquipped) DeepForestGreen else PureWhite
+                                        containerColor = if (isEquipped) LeafTint else Forest700,
+                                        contentColor = if (isEquipped) Leaf else PureWhite
                                     ),
+                                    border = if (isEquipped) androidx.compose.foundation.BorderStroke(1.5.dp, Leaf) else null,
                                     shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(36.dp)
+                                        .defaultMinSize(minHeight = 44.dp)
                                 ) {
                                     Text(
-                                        text = if (isEquipped) "✓ Aktif" else "Pilih Teman",
+                                        text = if (isEquipped) "✓ Aktif" else "Pilih",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
-                                        color = if (isEquipped) DeepForestGreen else PureWhite
+                                        color = if (isEquipped) Leaf else PureWhite
                                     )
                                 }
                             } else {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = Cream,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen),
+                                    color = CreamSoft,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Sage.copy(alpha = 0.7f)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = "Buka: ${companion.requiredStreak} hari streak",
-                                        color = DeepForestGreen,
+                                        text = "Streak ${companion.requiredStreak} hari",
+                                        color = Forest900,
                                         fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        fontWeight = FontWeight.SemiBold,
                                         textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(vertical = 6.dp)
+                                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
                                     )
                                 }
                             }

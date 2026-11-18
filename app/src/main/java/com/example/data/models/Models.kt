@@ -92,6 +92,7 @@ data class Question(
     val pictureOptions: List<PictureOption>? = null,// For Picture Tap: Vector illustrations
     val isStatementTrue: Boolean? = null,          // For True or False: Expected boolean
     val gridLetters: List<List<String>>? = null,   // For Word Hunt: 5x5 character grid
+    val categoryBuckets: Map<String, List<String>>? = null, // For Category Sort: Bucket Name -> Words
     val clue: String? = null,                      // Task 7: Indirect function/characteristic clue in Indonesian
     val clue2: String? = null,                     // Task 7: Deeper contextual hint + letter count
     val hintsEnabled: Boolean = true,              // Task 7: Set to false on highest level

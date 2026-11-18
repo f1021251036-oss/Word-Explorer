@@ -39,4 +39,68 @@ class ExampleUnitTest {
         assertTrue(R.raw.sound_correct != 0)
         assertTrue(R.raw.sound_incorrect != 0)
     }
+
+    @Test
+    fun `verify indirect clues contain no English target words across all 50 levels`() {
+        val path = com.example.data.models.LearningPath.LOW
+        val allQuestions = mutableListOf<com.example.data.models.Question>()
+        for (stage in 1..5) {
+            for (level in 1..10) {
+                allQuestions.addAll(com.example.data.seed.LevelTopicCatalog.generateTenQuestionsForLevel(path, stage, level))
+            }
+        }
+        assertEquals(500, allQuestions.size)
+        val violations = com.example.data.seed.LevelTopicCatalog.validateClues(allQuestions)
+        assertTrue("Found clue violations: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `verify category sort buckets and failure feedback across all levels`() {
+        val path = com.example.data.models.LearningPath.LOW
+        for (stage in 1..5) {
+            for (level in 1..10) {
+                val questions = com.example.data.seed.LevelTopicCatalog.generateTenQuestionsForLevel(path, stage, level)
+                val catQ = questions.find { it.type == com.example.data.models.QuestionType.CATEGORY_SORT }
+                assertNotNull("Level $stage-$level must have a CATEGORY_SORT question", catQ)
+                val buckets = catQ!!.categoryBuckets
+                assertNotNull(buckets)
+                assertEquals(2, buckets!!.size)
+                buckets.forEach { (name, words) ->
+                    assertTrue("Bucket '$name' in $stage-$level must have >= 2 words", words.size >= 2)
+                }
+                assertNotNull("Category Sort must have specific failureFeedback", catQ.failureFeedback)
+            }
+        }
+    }
+
+    @Test
+    fun `verify word hunt prompt does not spell raw target word`() {
+        val path = com.example.data.models.LearningPath.LOW
+        for (stage in 1..5) {
+            for (level in 1..10) {
+                val questions = com.example.data.seed.LevelTopicCatalog.generateTenQuestionsForLevel(path, stage, level)
+                val huntQ = questions.find { it.type == com.example.data.models.QuestionType.WORD_HUNT }
+                assertNotNull("Level $stage-$level must have a WORD_HUNT question", huntQ)
+                val grid = huntQ!!.gridLetters
+                assertNotNull(grid)
+                assertTrue("Grid size must be 6 or 8", grid!!.size == 6 || grid.size == 8)
+                assertFalse("Prompt must not give away raw target word", huntQ.prompt.contains("'${huntQ.targetWord}'", ignoreCase = true))
+            }
+        }
+    }
+
+    @Test
+    fun `verify master level disables hints completely`() {
+        val path = com.example.data.models.LearningPath.LOW
+        val masterQuestions = com.example.data.seed.LevelTopicCatalog.generateTenQuestionsForLevel(path, stage = 5, level = 10)
+        masterQuestions.forEach { q ->
+            assertFalse("Master level 5-10 must have hintsEnabled = false", q.hintsEnabled)
+        }
+
+        val normalQuestions = com.example.data.seed.LevelTopicCatalog.generateTenQuestionsForLevel(path, stage = 1, level = 1)
+        normalQuestions.forEach { q ->
+            assertTrue("Normal level 1-1 must have hintsEnabled = true", q.hintsEnabled)
+        }
+    }
 }
+

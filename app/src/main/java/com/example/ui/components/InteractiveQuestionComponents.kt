@@ -53,7 +53,7 @@ fun InteractiveFillBlankRenderer(
                     text = "LENGKAPI LOG KALIMAT SURVEYOR:",
                     fontFamily = CinzelFontFamily,
                     fontSize = 11.sp,
-                    color = SageGreen,
+                    color = SageDark,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 )
@@ -68,57 +68,43 @@ fun InteractiveFillBlankRenderer(
             }
         }
 
-        // Typing Field (Emerged Plate)
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = PureWhite,
-            shadowElevation = 4.dp,
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = typed,
-                onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
-                label = { Text("Ketik kata bahasa Inggris...", color = SageGreen) },
-                enabled = !isAnswerChecked,
-                trailingIcon = {
-                    IconButton(onClick = { viewModel.speakWord(question.correctAnswer) }) {
-                        ExpeditionIconSound(isEnabled = true, tint = DeepForestGreen, modifier = Modifier.size(18.dp))
-                    }
-                },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedBorderColor = DeepForestGreen,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedTextColor = DeepForestGreen,
-                    unfocusedTextColor = DeepForestGreen,
-                    focusedLabelColor = DeepForestGreen,
-                    unfocusedLabelColor = SageGreen
-                ),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("fill_blank_input_field")
-            )
-        }
+        // Typing Field (Single Crisp Border, no notch cut)
+        ExpeditionTextInputField(
+            value = typed,
+            onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
+            placeholderText = "Ketik kata bahasa Inggris...",
+            enabled = !isAnswerChecked,
+            trailingIcon = {
+                IconButton(onClick = { viewModel.speakWord(question.correctAnswer) }) {
+                    ExpeditionIconSound(isEnabled = true, tint = DeepForestGreen, modifier = Modifier.size(18.dp))
+                }
+            },
+            testTag = "fill_blank_input_field"
+        )
 
-        // Optional Hint Drawer
-        question.hint?.let { hintText ->
+        // Optional Two-Step Indirect Clue Drawer (Task 7)
+        if (question.hintsEnabled && (question.clue != null || question.hint != null)) {
+            val step by viewModel.clueStep.collectAsState()
+            val clue1 = question.clue ?: question.hint ?: ""
+            val clue2 = question.clue2 ?: "Kata ini terdiri dari ${question.targetWord.length} huruf."
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(
-                    onClick = { viewModel.toggleTypingHint() },
+                    onClick = { viewModel.advanceClueStep() },
                     modifier = Modifier.testTag("fill_blank_hint_button")
                 ) {
                     ExpeditionIconScroll(tint = DeepForestGreen, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (showHint) "TUTUP PETUNJUK" else "BUKA PETUNJUK SURVEI",
+                        text = when (step) {
+                            0 -> "BUTUH KISI-KISI?"
+                            1 -> "KISI-KISI TAMBAHAN (2/2)"
+                            else -> "TUTUP KISI-KISI"
+                        },
                         fontFamily = CinzelFontFamily,
                         color = DeepForestGreen,
                         fontSize = 11.sp,
@@ -127,21 +113,43 @@ fun InteractiveFillBlankRenderer(
                 }
             }
 
-            AnimatedVisibility(visible = showHint) {
+            AnimatedVisibility(visible = step > 0) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = SandGold.copy(alpha = 0.25f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, SandGold),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = hintText,
-                        color = DeepForestGreen,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "💡 Petunjuk Fungsi: $clue1",
+                            color = DeepForestGreen,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (step >= 2) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "🔍 Detail Tambahan: $clue2",
+                                color = DeepForestGreen,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
+            }
+        } else if (!question.hintsEnabled) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Tidak ada kisi-kisi di tingkat master",
+                    color = SageDark,
+                    fontSize = 11.sp,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                )
             }
         }
     }
@@ -179,7 +187,7 @@ fun SentenceBuilderRenderer(
                 if (slots.isEmpty()) {
                     Text(
                         text = "Kalimat akan tersusun di sini...",
-                        color = SageGreen,
+                        color = SageDark,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(vertical = 10.dp)
                     )
@@ -231,7 +239,7 @@ fun SentenceBuilderRenderer(
                     text = "Kepingan Kata Tersedia:",
                     fontFamily = CinzelFontFamily,
                     fontSize = 10.sp,
-                    color = SageGreen,
+                    color = SageDark,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 )
@@ -324,62 +332,70 @@ fun ListenAndTypeRenderer(
             fontWeight = FontWeight.Medium
         )
 
-        // Typing Field
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = PureWhite,
-            shadowElevation = 4.dp,
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, SageGreen),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = typed,
-                onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
-                label = { Text("Ketik kata yang kamu dengar...", color = SageGreen) },
-                enabled = !isAnswerChecked,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedBorderColor = DeepForestGreen,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedTextColor = DeepForestGreen,
-                    unfocusedTextColor = DeepForestGreen,
-                    focusedLabelColor = DeepForestGreen,
-                    unfocusedLabelColor = SageGreen
-                ),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("listen_type_input_field")
-            )
-        }
+        // Typing Field (Single Crisp Border, no notch cut)
+        ExpeditionTextInputField(
+            value = typed,
+            onValueChange = { if (!isAnswerChecked) viewModel.setTypedAnswer(it) },
+            placeholderText = "Ketik kata yang kamu dengar...",
+            enabled = !isAnswerChecked,
+            testTag = "listen_type_input_field"
+        )
 
-        // Hint Toggle
-        question.hint?.let { hintText ->
-            TextButton(onClick = { viewModel.toggleTypingHint() }) {
+        // Two-Step Indirect Clue Toggle (Task 7)
+        if (question.hintsEnabled && (question.clue != null || question.hint != null)) {
+            val step by viewModel.clueStep.collectAsState()
+            val clue1 = question.clue ?: question.hint ?: ""
+            val clue2 = question.clue2 ?: "Kata ini terdiri dari ${question.targetWord.length} huruf."
+
+            TextButton(onClick = { viewModel.advanceClueStep() }) {
                 Text(
-                    text = if (showHint) "Tutup Petunjuk" else "Butuh Petunjuk Arti?",
+                    text = when (step) {
+                        0 -> "Butuh Kisi-kisi?"
+                        1 -> "Kisi-kisi Tambahan (2/2)"
+                        else -> "Tutup Kisi-kisi"
+                    },
                     color = DeepForestGreen,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-            AnimatedVisibility(visible = showHint) {
+            AnimatedVisibility(visible = step > 0) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = SandGold.copy(alpha = 0.25f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, SandGold),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = hintText,
-                        color = DeepForestGreen,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(10.dp)
-                    )
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "💡 Petunjuk Fungsi: $clue1",
+                            color = DeepForestGreen,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (step >= 2) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "🔍 Detail Tambahan: $clue2",
+                                color = DeepForestGreen,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
+            }
+        } else if (!question.hintsEnabled) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Tidak ada kisi-kisi di tingkat master",
+                    color = SageDark,
+                    fontSize = 11.sp,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                )
             }
         }
     }
@@ -421,19 +437,19 @@ fun PictureTapRenderer(
                             onClick = { if (!isAnswerChecked) onOptionSelected(opt.label) },
                             shape = RoundedCornerShape(12.dp),
                             color = when {
-                                isAnswerChecked && isCorrect -> Color(0xFFE8F5E9)
-                                isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
-                                isSelected -> SandGold
+                                isAnswerChecked && isCorrect -> LeafTint
+                                isAnswerChecked && isSelected && !isAnswerCorrect -> TerracottaTint
+                                isSelected -> Sand
                                 else -> PureWhite
                             },
                             shadowElevation = if (isSelected) 4.dp else 1.dp,
                             border = androidx.compose.foundation.BorderStroke(
                                 if (isSelected || isAnswerChecked) 2.dp else 1.5.dp,
                                 when {
-                                    isAnswerChecked && isCorrect -> Color(0xFF2D5A27) // Leaf green
-                                    isAnswerChecked && isSelected && !isAnswerCorrect -> Color(0xFFA8422B) // Terracotta
-                                    isSelected -> DeepForestGreen
-                                    else -> SageGreen
+                                    isAnswerChecked && isCorrect -> Leaf
+                                    isAnswerChecked && isSelected && !isAnswerCorrect -> Terracotta
+                                    isSelected -> Forest900
+                                    else -> Sage
                                 }
                             ),
                             modifier = Modifier
@@ -521,7 +537,7 @@ fun CategorySortRenderer(
                     text = "Kata yang Belum Dipilah:",
                     fontFamily = CinzelFontFamily,
                     fontSize = 10.sp,
-                    color = SageGreen,
+                    color = SageDark,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -598,7 +614,7 @@ fun CategorySortRenderer(
                             Text(
                                 text = "Ketuk untuk taruh di sini",
                                 fontSize = 11.sp,
-                                color = SageGreen
+                                color = SageDark
                             )
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -617,7 +633,7 @@ fun CategorySortRenderer(
                                         ) {
                                             Text(text = w, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DeepForestGreen)
                                             if (!isAnswerChecked) {
-                                                Text(text = "✕", fontSize = 10.sp, color = Color(0xFFA8422B))
+                                                Text(text = "✕", fontSize = 10.sp, color = Terracotta)
                                             }
                                         }
                                     }
@@ -682,7 +698,7 @@ fun MemoryFlipRenderer(
                             },
                             border = androidx.compose.foundation.BorderStroke(
                                 1.5.dp,
-                                if (isMatched) Color(0xFF2D5A27) else DeepForestGreen
+                                if (isMatched) Leaf else Forest900
                             ),
                             shadowElevation = 3.dp,
                             modifier = Modifier
@@ -739,7 +755,7 @@ fun TrueFalseRenderer(
                     text = "PERNYATAAN LOG SURVEI:",
                     fontFamily = CinzelFontFamily,
                     fontSize = 10.sp,
-                    color = SageGreen,
+                    color = SageDark,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 )
@@ -748,7 +764,7 @@ fun TrueFalseRenderer(
                     text = question.subText ?: question.prompt,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
-                    color = DeepForestGreen,
+                    color = Forest900,
                     lineHeight = 22.sp
                 )
             }
@@ -765,18 +781,18 @@ fun TrueFalseRenderer(
                 onClick = { if (!isAnswerChecked) viewModel.selectTrueFalse(true) },
                 shape = RoundedCornerShape(12.dp),
                 color = when {
-                    isAnswerChecked && question.isStatementTrue == true -> Color(0xFFE8F5E9)
-                    isAnswerChecked && isTrueSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
-                    isTrueSelected -> SandGold
+                    isAnswerChecked && question.isStatementTrue == true -> LeafTint
+                    isAnswerChecked && isTrueSelected && !isAnswerCorrect -> TerracottaTint
+                    isTrueSelected -> Sand
                     else -> PureWhite
                 },
                 border = androidx.compose.foundation.BorderStroke(
                     if (isTrueSelected || isAnswerChecked) 2.dp else 1.5.dp,
                     when {
-                        isAnswerChecked && question.isStatementTrue == true -> Color(0xFF2D5A27)
-                        isAnswerChecked && isTrueSelected && !isAnswerCorrect -> Color(0xFFA8422B)
-                        isTrueSelected -> DeepForestGreen
-                        else -> SageGreen
+                        isAnswerChecked && question.isStatementTrue == true -> Leaf
+                        isAnswerChecked && isTrueSelected && !isAnswerCorrect -> Terracotta
+                        isTrueSelected -> Forest900
+                        else -> Sage
                     }
                 ),
                 shadowElevation = if (isTrueSelected) 4.dp else 1.dp,
@@ -802,18 +818,18 @@ fun TrueFalseRenderer(
                 onClick = { if (!isAnswerChecked) viewModel.selectTrueFalse(false) },
                 shape = RoundedCornerShape(12.dp),
                 color = when {
-                    isAnswerChecked && question.isStatementTrue == false -> Color(0xFFE8F5E9)
-                    isAnswerChecked && isFalseSelected && !isAnswerCorrect -> Color(0xFFFFEBEE)
-                    isFalseSelected -> SandGold
+                    isAnswerChecked && question.isStatementTrue == false -> LeafTint
+                    isAnswerChecked && isFalseSelected && !isAnswerCorrect -> TerracottaTint
+                    isFalseSelected -> Sand
                     else -> PureWhite
                 },
                 border = androidx.compose.foundation.BorderStroke(
                     if (isFalseSelected || isAnswerChecked) 2.dp else 1.5.dp,
                     when {
-                        isAnswerChecked && question.isStatementTrue == false -> Color(0xFF2D5A27)
-                        isAnswerChecked && isFalseSelected && !isAnswerCorrect -> Color(0xFFA8422B)
-                        isFalseSelected -> DeepForestGreen
-                        else -> SageGreen
+                        isAnswerChecked && question.isStatementTrue == false -> Leaf
+                        isAnswerChecked && isFalseSelected && !isAnswerCorrect -> Terracotta
+                        isFalseSelected -> Forest900
+                        else -> Sage
                     }
                 ),
                 shadowElevation = if (isFalseSelected) 4.dp else 1.dp,
@@ -882,27 +898,31 @@ fun WordHuntRenderer(
                 )
                 if (!isAnswerChecked && selectedCoords.isNotEmpty()) {
                     TextButton(onClick = { viewModel.clearGridCoords() }) {
-                        Text("Reset", color = Color(0xFFA8422B), fontSize = 11.sp)
+                        Text("Reset", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        // 5x5 Grid Display
+        // Dynamic Letter Grid Display (fits 320px width cleanly)
+        val colCount = grid.firstOrNull()?.size ?: 5
+        val tileSize = if (colCount >= 7) 34.dp else if (colCount >= 6) 38.dp else 44.dp
+        val fontSize = if (colCount >= 7) 14.sp else if (colCount >= 6) 15.sp else 17.sp
+
         Surface(
             shape = RoundedCornerShape(12.dp),
             color = Cream,
             border = androidx.compose.foundation.BorderStroke(2.dp, DeepForestGreen),
-            shadowElevation = 4.dp,
-            modifier = Modifier.padding(horizontal = 12.dp)
+            shadowElevation = 3.dp,
+            modifier = Modifier.padding(horizontal = 4.dp)
         ) {
             Column(
-                modifier = Modifier.padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier.padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 grid.forEachIndexed { r, rowList ->
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         rowList.forEachIndexed { c, char ->
                             val isSelected = selectedCoords.contains(Pair(r, c))
@@ -916,14 +936,14 @@ fun WordHuntRenderer(
                                 ),
                                 shadowElevation = if (isSelected) 2.dp else 1.dp,
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(tileSize)
                                     .testTag("grid_tile_${r}_${c}")
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = char,
                                         fontWeight = FontWeight.Black,
-                                        fontSize = 17.sp,
+                                        fontSize = fontSize,
                                         color = if (isSelected) SandGold else DeepForestGreen
                                     )
                                 }

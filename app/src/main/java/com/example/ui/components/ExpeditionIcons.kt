@@ -241,7 +241,7 @@ fun ExpeditionIconCampfire(
             cubicTo(w * 0.35f, h * 0.62f, w * 0.38f, h * 0.50f, w * 0.50f, h * 0.38f)
             close()
         }
-        drawPath(innerFlame, color = Color(0xFFA8422B))
+        drawPath(innerFlame, color = Terracotta)
     }
 }
 
@@ -352,7 +352,7 @@ fun ExpeditionIconLantern(
 
         // Inner glowing flame
         drawCircle(color = accentTint, radius = strokeW * 2.2f, center = Offset(w * 0.50f, h * 0.56f))
-        drawCircle(color = Color(0xFFA8422B), radius = strokeW * 1.1f, center = Offset(w * 0.50f, h * 0.56f))
+        drawCircle(color = Terracotta, radius = strokeW * 1.1f, center = Offset(w * 0.50f, h * 0.56f))
     }
 }
 
@@ -384,7 +384,7 @@ fun ExpeditionIconStreakFlame(
             cubicTo(w * 0.40f, h * 0.70f, w * 0.38f, h * 0.56f, w * 0.50f, h * 0.44f)
             close()
         }
-        drawPath(innerWick, color = Color(0xFFA8422B))
+        drawPath(innerWick, color = Terracotta)
         drawPath(innerWick, color = tint, style = Stroke(width = strokeW * 0.75f))
     }
 }
@@ -466,7 +466,7 @@ fun ExpeditionIconLock(
 @Composable
 fun ExpeditionIconCheckmark(
     modifier: Modifier = Modifier.size(24.dp),
-    tint: Color = Color(0xFF2D5A27) // Leaf green
+    tint: Color = Leaf // Leaf green
 ) {
     Canvas(modifier = modifier) {
         val w = size.width
@@ -628,14 +628,14 @@ fun ExpeditionIconSound(
         } else {
             // Mute slash
             drawLine(
-                color = Color(0xFFA8422B),
+                color = TerracottaBright,
                 start = Offset(w * 0.68f, h * 0.32f),
                 end = Offset(w * 0.88f, h * 0.68f),
                 strokeWidth = strokeW * 1.2f,
                 cap = StrokeCap.Round
             )
             drawLine(
-                color = Color(0xFFA8422B),
+                color = TerracottaBright,
                 start = Offset(w * 0.88f, h * 0.32f),
                 end = Offset(w * 0.68f, h * 0.68f),
                 strokeWidth = strokeW * 1.2f,
@@ -678,7 +678,7 @@ fun ExpeditionIconExit(
 @Composable
 fun ExpeditionIconCross(
     modifier: Modifier = Modifier.size(24.dp),
-    tint: Color = Color(0xFFA8422B) // Muted terracotta
+    tint: Color = Terracotta // Warm terracotta
 ) {
     Canvas(modifier = modifier) {
         val w = size.width

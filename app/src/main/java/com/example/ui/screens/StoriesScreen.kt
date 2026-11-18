@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -63,30 +64,23 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = DeepForestGreen,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, SandGold),
-                shadowElevation = 3.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "📖 Cerita Petualangan (Adventure Lore)",
-                        fontWeight = FontWeight.Bold,
-                        color = SandGold,
-                        fontSize = 16.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Baca kisah penjelajahan di setiap wilayah peta, pelajari kosakata dalam konteks bacaan, dan selesaikan kuis pemahaman.",
-                        color = PureWhite,
-                        fontSize = 13.sp
-                    )
-                }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Adventure Lore",
+                    fontFamily = CinzelFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Forest900,
+                    fontSize = 19.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Kisah tiap wilayah peta & kuis pemahaman singkat.",
+                    color = SageDark,
+                    fontSize = 13.sp
+                )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -112,11 +106,11 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = DeepForestGreen
+                                    color = Forest500
                                 ) {
                                     Text(
                                         text = story.region,
-                                        color = SandGold,
+                                        color = Sand,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -125,9 +119,9 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
 
                                 if (isDone) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = DeepForestGreen, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Leaf, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Selesai", color = DeepForestGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Text("Selesai", color = Leaf, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -145,27 +139,29 @@ fun StoriesScreen(viewModel: WordExplorerViewModel) {
 
                             Text(
                                 text = story.synopsis,
-                                color = DeepForestGreen.copy(alpha = 0.85f),
+                                color = SageDark,
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Target Vocabulary pills
+                            // Target Vocabulary pills (scrollable on narrow screens)
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
                             ) {
                                 story.targetWords.take(4).forEach { word ->
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = Cream,
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, SageGreen)
+                                        color = CreamSoft,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Sage.copy(alpha = 0.7f))
                                     ) {
                                         Text(
                                             text = word,
-                                            color = DeepForestGreen,
+                                            color = Forest900,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -230,10 +226,14 @@ fun StoryReaderDialog(
                         text = story.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = DeepForestGreen
+                        color = Forest900,
+                        modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DeepForestGreen)
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Forest900)
                     }
                 }
 
@@ -293,18 +293,18 @@ fun StoryReaderDialog(
                                         },
                                         shape = RoundedCornerShape(8.dp),
                                         color = when {
-                                            quizAnswered && opt == question.correctAnswer -> PureWhite
-                                            quizAnswered && isSelected && !quizCorrect -> PureWhite
-                                            isSelected -> SandGold
+                                            quizAnswered && opt == question.correctAnswer -> LeafTint
+                                            quizAnswered && isSelected && !quizCorrect -> TerracottaTint
+                                            isSelected -> Sand
                                             else -> PureWhite
                                         },
                                         border = androidx.compose.foundation.BorderStroke(
                                             if (isSelected || quizAnswered) 2.dp else 1.dp,
                                             when {
-                                                quizAnswered && opt == question.correctAnswer -> DeepForestGreen
-                                                quizAnswered && isSelected && !quizCorrect -> SemanticRed
-                                                isSelected -> DeepForestGreen
-                                                else -> SageGreen
+                                                quizAnswered && opt == question.correctAnswer -> Leaf
+                                                quizAnswered && isSelected && !quizCorrect -> Terracotta
+                                                isSelected -> Forest900
+                                                else -> Sage
                                             }
                                         ),
                                         modifier = Modifier
@@ -314,8 +314,8 @@ fun StoryReaderDialog(
                                         Text(
                                             text = opt,
                                             color = when {
-                                                quizAnswered && isSelected && !quizCorrect -> SemanticRed
-                                                else -> DeepForestGreen
+                                                quizAnswered && isSelected && !quizCorrect -> Terracotta
+                                                else -> Forest900
                                             },
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Medium,
@@ -328,7 +328,7 @@ fun StoryReaderDialog(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = if (quizCorrect) "✓ Jawaban Benar! Cerita Selesai." else "❌ Kurang tepat: ${question.explanation}",
-                                        color = if (quizCorrect) DeepForestGreen else SemanticRed,
+                                        color = if (quizCorrect) Leaf else Terracotta,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp
                                     )

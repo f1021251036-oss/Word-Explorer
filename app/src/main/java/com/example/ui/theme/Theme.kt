@@ -8,49 +8,104 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+@Immutable
+data class ExpeditionColors(
+    val canvasLight: Color = Cream,
+    val surfaceElevated: Color = PureWhite,
+    val surfaceSoft: Color = CreamSoft,
+    val canvasDark: Color = Forest700,
+    val surfaceDarkElevated: Color = Forest900,
+    val primaryInk: Color = Forest900,
+    val secondaryInk: Color = SageDark,
+    val darkMutedInk: Color = SageLight,
+    val ctaPrimary: Color = Honey,
+    val ctaPrimaryHover: Color = HoneyHover,
+    val ctaPrimaryPressed: Color = HoneyPressed,
+    val ctaPrimaryContent: Color = Forest900,
+    val ctaSecondary: Color = Sand,
+    val ctaSecondaryHover: Color = SandHover,
+    val ctaSecondaryPressed: Color = SandPressed,
+    val success: Color = Leaf,
+    val successOnDark: Color = LeafBright,
+    val successTint: Color = LeafTint,
+    val error: Color = Terracotta,
+    val errorOnDark: Color = TerracottaBright,
+    val errorTint: Color = TerracottaTint,
+    val info: Color = Lagoon,
+    val infoOnDark: Color = LagoonBright,
+    val infoTint: Color = LagoonTint,
+    val borderLight: Color = Sage,
+    val borderDark: Color = DarkBorderSubtle,
+    val disabledBg: Color = DisabledBg,
+    val disabledFg: Color = DisabledFg
+)
+
+val LocalExpeditionColors = staticCompositionLocalOf { ExpeditionColors() }
+
+val MaterialTheme.expeditionColors: ExpeditionColors
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalExpeditionColors.current
+
 private val LightColorScheme = lightColorScheme(
-    primary = DeepForestGreen,
+    primary = Forest700,
     onPrimary = PureWhite,
-    primaryContainer = SandGold,
-    onPrimaryContainer = DeepForestGreen,
-    secondary = SageGreen,
+    primaryContainer = Sand,
+    onPrimaryContainer = Forest900,
+    secondary = Forest500,
     onSecondary = PureWhite,
-    secondaryContainer = Cream,
-    onSecondaryContainer = DeepForestGreen,
-    tertiary = SandGold,
-    onTertiary = DeepForestGreen,
+    secondaryContainer = CreamSoft,
+    onSecondaryContainer = Forest900,
+    tertiary = Honey,
+    onTertiary = Forest900,
     background = Cream,
-    onBackground = DeepForestGreen,
+    onBackground = Forest900,
     surface = PureWhite,
-    onSurface = DeepForestGreen,
-    surfaceVariant = Cream,
-    onSurfaceVariant = DeepForestGreen,
-    error = SemanticRed,
-    onError = PureWhite
+    onSurface = Forest900,
+    surfaceVariant = CreamSoft,
+    onSurfaceVariant = SageDark,
+    surfaceContainer = PureWhite,
+    surfaceContainerHigh = PureWhite,
+    outline = Sage,
+    outlineVariant = SageDark,
+    error = Terracotta,
+    onError = PureWhite,
+    errorContainer = TerracottaTint,
+    onErrorContainer = Terracotta
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = SandGold,
-    onPrimary = DeepForestGreen,
-    primaryContainer = DeepForestGreen,
+    primary = Honey,
+    onPrimary = Forest900,
+    primaryContainer = Forest500,
     onPrimaryContainer = Cream,
-    secondary = SageGreen,
-    onSecondary = PureWhite,
-    secondaryContainer = DeepForestGreen,
+    secondary = Sand,
+    onSecondary = Forest900,
+    secondaryContainer = Forest900,
     onSecondaryContainer = Cream,
-    tertiary = Cream,
-    onTertiary = DeepForestGreen,
-    background = DeepForestGreen,
+    tertiary = LagoonBright,
+    onTertiary = Forest900,
+    background = Forest700,
     onBackground = Cream,
-    surface = Color(0xFF0F260A),
+    surface = Forest900,
     onSurface = Cream,
-    surfaceVariant = DeepForestGreen,
-    onSurfaceVariant = Cream,
-    error = SemanticRed,
-    onError = PureWhite
+    surfaceVariant = Forest500,
+    onSurfaceVariant = SageLight,
+    surfaceContainer = Forest900,
+    surfaceContainerHigh = Forest500,
+    outline = DarkBorderSubtle,
+    outlineVariant = Sage,
+    error = TerracottaBright,
+    onError = Forest900,
+    errorContainer = Terracotta,
+    onErrorContainer = PureWhite
 )
 
 @Composable
@@ -68,11 +123,13 @@ fun WordExplorerTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalExpeditionColors provides ExpeditionColors()) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 
 // Retain alias for template compatibility

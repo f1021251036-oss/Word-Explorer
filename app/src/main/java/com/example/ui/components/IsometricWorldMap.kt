@@ -4,13 +4,17 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,6 +53,7 @@ fun IsometricWorldMap(
     onLevelClick: (LevelInfo) -> Unit,
     onRegionClick: (ExplorationRegion) -> Unit,
     isRegionUnlocked: (Int) -> Boolean,
+    onReplayGuide: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Determine active level along the calibrated trail
@@ -107,11 +112,12 @@ fun IsometricWorldMap(
 
     // Feedback message state when tapping locked levels or regions
     var lockedAlertMessage by remember { mutableStateOf<String?>(null) }
+    var showLegend by remember { mutableStateOf(false) }
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF091B14))
+            .background(ShadowDark)
     ) {
         val density = LocalDensity.current
         val viewportWidth = maxWidth
@@ -210,11 +216,11 @@ fun IsometricWorldMap(
                         .clip(RoundedCornerShape(8.dp))
                 )
 
-                // 2. Connecting Gold Route Curve Canvas behind markers
+                // 2. Connecting Route Curve Canvas behind markers (distinguishes traversed vs locked trails)
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val pathWidthPx = 3.dp.toPx()
-                    val goldGlowColor = Color(0x66FFD700)
-                    val goldCoreColor = Color(0xCCFFA000)
+                    val casingWidthPx = 6.dp.toPx()
+                    val dashedEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f))
 
                     // Draw connecting path line between consecutive level points
                     for (i in 0 until levels.size - 1) {
@@ -226,22 +232,42 @@ fun IsometricWorldMap(
                         val endX = (next.posX / NATIVE_MAP_WIDTH) * size.width
                         val endY = (next.posY / NATIVE_MAP_HEIGHT) * size.height
 
-                        // Draw subtle glow line
-                        drawLine(
-                            color = goldGlowColor,
-                            start = Offset(startX, startY),
-                            end = Offset(endX, endY),
-                            strokeWidth = pathWidthPx * 1.8f,
-                            cap = StrokeCap.Round
-                        )
-                        // Draw core line
-                        drawLine(
-                            color = goldCoreColor,
-                            start = Offset(startX, startY),
-                            end = Offset(endX, endY),
-                            strokeWidth = pathWidthPx,
-                            cap = StrokeCap.Round
-                        )
+                        val isTraversedOrOpen = curr.status == LevelStatus.COMPLETED || next.status != LevelStatus.LOCKED
+
+                        if (isTraversedOrOpen) {
+                            // Inked dark casing + vivid warm gold core
+                            drawLine(
+                                color = ShadowDark.copy(alpha = 0.65f),
+                                start = Offset(startX, startY),
+                                end = Offset(endX, endY),
+                                strokeWidth = casingWidthPx,
+                                cap = StrokeCap.Round
+                            )
+                            drawLine(
+                                color = HoneyHover,
+                                start = Offset(startX, startY),
+                                end = Offset(endX, endY),
+                                strokeWidth = pathWidthPx,
+                                cap = StrokeCap.Round
+                            )
+                        } else {
+                            // Subtle dark backing + dashed uncharted locked trail
+                            drawLine(
+                                color = ShadowDark.copy(alpha = 0.40f),
+                                start = Offset(startX, startY),
+                                end = Offset(endX, endY),
+                                strokeWidth = pathWidthPx * 1.4f,
+                                cap = StrokeCap.Round
+                            )
+                            drawLine(
+                                color = CreamSoft.copy(alpha = 0.72f),
+                                start = Offset(startX, startY),
+                                end = Offset(endX, endY),
+                                strokeWidth = pathWidthPx * 0.75f,
+                                pathEffect = dashedEffect,
+                                cap = StrokeCap.Round
+                            )
+                        }
                     }
                 }
 
@@ -260,34 +286,17 @@ fun IsometricWorldMap(
 
                     // Milestone checkpoint flags on level 10 of each chapter
                     val isCheckpoint = level.levelNumber == 10
+                    val visibleSize = if (isCurrent) 38.dp else 32.dp
 
                     Box(
                         modifier = Modifier
                             .offset(
-                                x = nodeXDp - 18.dp,
-                                y = nodeYDp - 18.dp
+                                x = nodeXDp - 24.dp,
+                                y = nodeYDp - 24.dp
                             )
-                            .size(36.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Pulsing outer halo for active level
-                        if (isCurrent) {
-                            Canvas(modifier = Modifier.fillMaxSize()) {
-                                drawCircle(
-                                    color = SandGold.copy(alpha = pulseAlpha * 0.5f),
-                                    radius = (size.minDimension / 2f) * pulseScale
-                                )
-                                drawCircle(
-                                    color = DeepForestGreen.copy(alpha = 0.85f),
-                                    radius = (size.minDimension / 2.2f) * pulseScale,
-                                    style = Stroke(width = 2.5f)
-                                )
-                            }
-                        }
-
-                        // Circular Node Surface
-                        Surface(
-                            onClick = {
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .clickable {
                                 if (isLocked) {
                                     val prevLevel = levels.find {
                                         it.stageNumber == level.stageNumber && it.levelNumber == level.levelNumber - 1
@@ -297,121 +306,155 @@ fun IsometricWorldMap(
                                 } else {
                                     onLevelClick(level)
                                 }
-                            },
+                            }
+                            .testTag("level_node_${level.stageNumber}_${level.levelNumber}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Pulsing outer halo for active level
+                        if (isCurrent) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                drawCircle(
+                                    color = Sand.copy(alpha = pulseAlpha * 0.55f),
+                                    radius = (size.minDimension / 2.1f) * pulseScale
+                                )
+                                drawCircle(
+                                    color = PureWhite.copy(alpha = 0.90f),
+                                    radius = (size.minDimension / 2.25f) * pulseScale,
+                                    style = Stroke(width = 2.5f)
+                                )
+                            }
+                        }
+
+                        // Circular Node Surface
+                        Surface(
                             shape = CircleShape,
                             color = when {
-                                isCurrent -> SandGold
-                                isCompleted -> DeepForestGreen
-                                isAvailable -> Cream
-                                else -> SageGreen.copy(alpha = 0.35f)
+                                isCurrent -> Honey
+                                isCompleted -> Leaf
+                                isAvailable -> PureWhite
+                                else -> DisabledBg
                             },
                             border = androidx.compose.foundation.BorderStroke(
-                                width = if (isCurrent) 2.5.dp else 1.5.dp,
+                                width = if (isCurrent) 2.5.dp else 2.dp,
                                 color = when {
-                                    isCurrent -> DeepForestGreen
-                                    isCompleted -> SandGold
-                                    isAvailable -> SageGreen
-                                    else -> SageGreen.copy(alpha = 0.6f)
+                                    isCurrent -> Forest900
+                                    isCompleted -> PureWhite
+                                    isAvailable -> Forest700
+                                    else -> SageDark
                                 }
                             ),
-                            shadowElevation = if (isCurrent) 8.dp else 3.dp,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .testTag("level_node_${level.stageNumber}_${level.levelNumber}")
+                            shadowElevation = if (isCurrent) 8.dp else 4.dp,
+                            modifier = Modifier.size(visibleSize)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 when {
                                     isLocked -> {
                                         Icon(
                                             imageVector = Icons.Default.Lock,
-                                            contentDescription = "Locked Level ${level.stageNumber}-${level.levelNumber}",
-                                            tint = SageGreen,
-                                            modifier = Modifier.size(13.dp)
+                                            contentDescription = "Terkunci Level ${level.stageNumber}-${level.levelNumber}",
+                                            tint = DisabledFg,
+                                            modifier = Modifier.size(15.dp)
                                         )
                                     }
                                     isCompleted -> {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Text(
-                                                text = "${level.levelNumber}",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = PureWhite
-                                            )
-                                        }
+                                        Text(
+                                            text = "${level.levelNumber}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = PureWhite
+                                        )
                                     }
                                     else -> {
                                         Text(
                                             text = "${level.levelNumber}",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = DeepForestGreen
+                                            fontSize = if (isCurrent) 14.sp else 13.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = Forest900
                                         )
                                     }
                                 }
                             }
                         }
 
-                        // Star badge below completed nodes
+                        // Crisp Vector Star Pips below completed nodes (replaces tiny blurry emoji)
                         if (isCompleted && level.stars > 0) {
                             Row(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
-                                    .offset(y = 10.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(DeepForestGreen)
-                                    .padding(horizontal = 3.dp, vertical = 1.dp)
+                                    .offset(y = 2.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Forest900)
+                                    .border(1.dp, Sand, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                repeat(level.stars) {
-                                    Text(text = "⭐", fontSize = 7.sp)
+                                repeat(level.stars.coerceIn(1, 3)) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = Honey,
+                                        modifier = Modifier.size(8.dp)
+                                    )
                                 }
                             }
                         }
 
-                        // Checkpoint Flag
+                        // Crisp Vector Milestone Badge on Level 10
                         if (isCheckpoint) {
-                            Text(
-                                text = "🚩",
-                                fontSize = 12.sp,
+                            Surface(
+                                shape = CircleShape,
+                                color = Sand,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Forest900),
+                                shadowElevation = 2.dp,
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
-                                    .offset(x = 6.dp, y = (-8).dp)
-                            )
+                                    .offset(x = (-1).dp, y = (-1).dp)
+                                    .size(16.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Flag,
+                                        contentDescription = "Milestone Level 10",
+                                        tint = Forest900,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    // Prominent PLAY Button badge near active level
+                    // Prominent Compact PLAY Pill directly below the active level
                     if (isCurrent) {
                         Surface(
                             onClick = { onLevelClick(level) },
-                            shape = RoundedCornerShape(14.dp),
-                            color = DeepForestGreen,
-                            border = androidx.compose.foundation.BorderStroke(2.dp, SandGold),
-                            shadowElevation = 8.dp,
+                            shape = RoundedCornerShape(12.dp),
+                            color = Forest900,
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, Honey),
+                            shadowElevation = 6.dp,
                             modifier = Modifier
                                 .offset(
-                                    x = nodeXDp - 32.dp,
-                                    y = nodeYDp + 20.dp
+                                    x = nodeXDp - 31.dp,
+                                    y = nodeYDp + 24.dp
                                 )
                                 .testTag("active_play_button")
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Play",
-                                    tint = PureWhite,
-                                    modifier = Modifier.size(16.dp)
+                                    contentDescription = "Play Level ${level.stageNumber}-${level.levelNumber}",
+                                    tint = Honey,
+                                    modifier = Modifier.size(15.dp)
                                 )
-                                Spacer(modifier = Modifier.width(3.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
                                 Text(
                                     text = "PLAY",
                                     fontWeight = FontWeight.Black,
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
+                                    letterSpacing = 0.5.sp,
                                     color = PureWhite
                                 )
                             }
@@ -432,7 +475,7 @@ fun IsometricWorldMap(
                     val bannerOffsetXDp = fitWidth * normBannerX
                     val bannerOffsetYDp = fitHeight * normBannerY
 
-                    // Interactive Floating Region Badge near the artwork banner
+                    // Interactive Compact Floating Region Pill near the artwork banner
                     Surface(
                         onClick = {
                             if (unlocked) {
@@ -444,55 +487,52 @@ fun IsometricWorldMap(
                         },
                         shape = RoundedCornerShape(12.dp),
                         color = when {
-                            !unlocked -> PureWhite.copy(alpha = 0.92f)
-                            isCompleted -> DeepForestGreen
-                            isActiveStage -> SandGold
+                            !unlocked -> PureWhite.copy(alpha = 0.94f)
+                            isCompleted -> Leaf
+                            isActiveStage -> Honey
                             else -> Cream
                         },
                         border = androidx.compose.foundation.BorderStroke(
                             1.5.dp,
                             when {
-                                !unlocked -> SageGreen.copy(alpha = 0.7f)
-                                isCompleted -> SandGold
-                                isActiveStage -> DeepForestGreen
-                                else -> SageGreen
+                                !unlocked -> SageDark
+                                isCompleted -> Sand
+                                isActiveStage -> Forest900
+                                else -> Forest700
                             }
                         ),
-                        shadowElevation = 5.dp,
+                        shadowElevation = 4.dp,
                         modifier = Modifier
                             .offset(
-                                x = bannerOffsetXDp - 40.dp,
-                                y = bannerOffsetYDp - 16.dp
+                                x = bannerOffsetXDp - 38.dp,
+                                y = bannerOffsetYDp - 14.dp
                             )
                             .testTag("region_banner_${region.name.lowercase().replace(" ", "_")}")
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(text = region.iconEmoji, fontSize = 12.sp)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Column {
-                                Text(
-                                    text = region.name.uppercase(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp,
-                                    color = if (isCompleted) PureWhite else DeepForestGreen
+                            Text(text = region.iconEmoji, fontSize = 11.sp)
+                            Text(
+                                text = region.name,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                color = if (isCompleted) PureWhite else Forest900
+                            )
+                            when {
+                                !unlocked -> Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Terkunci",
+                                    tint = SageDark,
+                                    modifier = Modifier.size(11.dp)
                                 )
-                                Text(
-                                    text = when {
-                                        !unlocked -> "LOCKED"
-                                        isCompleted -> "COMPLETED"
-                                        isActiveStage -> "ACTIVE"
-                                        else -> "EXPLORE"
-                                    },
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 8.sp,
-                                    color = when {
-                                        !unlocked -> SageGreen
-                                        isCompleted -> SandGold
-                                        else -> DeepForestGreen
-                                    }
+                                isCompleted -> Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Selesai",
+                                    tint = PureWhite,
+                                    modifier = Modifier.size(11.dp)
                                 )
                             }
                         }
@@ -500,7 +540,7 @@ fun IsometricWorldMap(
                 }
 
                 // 5. Interactive Adventurer Pin Overlay
-                // Smoothly animated along the exploration trail
+                // Centered directly above the active node with pointer stem
                 val normCharX = animatedCharX / NATIVE_MAP_WIDTH
                 val normCharY = animatedCharY / NATIVE_MAP_HEIGHT
                 val charXDp = fitWidth * normCharX
@@ -509,10 +549,11 @@ fun IsometricWorldMap(
                 Box(
                     modifier = Modifier
                         .offset(
-                            x = charXDp - 42.dp,
-                            y = charYDp - 30.dp + characterBob.dp
+                            x = charXDp - 22.dp,
+                            y = charYDp - 50.dp + characterBob.dp
                         )
-                        .size(42.dp)
+                        .size(44.dp)
+                        .clip(CircleShape)
                         .clickable {
                             activeLevel?.let { onLevelClick(it) }
                         }
@@ -524,13 +565,15 @@ fun IsometricWorldMap(
             }
         }
 
-        // --- Quick Stage Jump Selector Bar (Top Left) ---
+        // --- Quick Stage Jump Selector Bar (Top Left, horizontally scrollable without colliding with top-right stats) ---
         Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 10.dp, top = 10.dp)
+                .padding(start = 10.dp, top = 10.dp, end = 152.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color(0xD90D241C))
+                .background(Forest900.copy(alpha = 0.92f))
+                .border(1.dp, DarkBorderSubtle, RoundedCornerShape(18.dp))
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 6.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -560,30 +603,35 @@ fun IsometricWorldMap(
                     },
                     shape = RoundedCornerShape(12.dp),
                     color = when {
-                        isCurrent -> AdventureOrange
-                        unlocked -> Color(0x333F5E52)
-                        else -> Color(0x1A25332E)
+                        isCurrent -> Honey
+                        unlocked -> Forest500
+                        else -> Forest900
                     },
                     modifier = Modifier.testTag("jump_stage_${reg.stageNumber}")
                 ) {
+                    val shortRegionLabel = if (reg.name == "Ancient Rome") "Rome" else reg.name
                     Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = reg.iconEmoji, fontSize = 11.sp)
-                        Spacer(modifier = Modifier.width(2.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = reg.name,
+                            text = shortRegionLabel,
                             fontSize = 10.sp,
                             fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-                            color = if (unlocked) Color.White else Color(0xFF7A8D86)
+                            color = when {
+                                isCurrent -> Forest900
+                                unlocked -> PureWhite
+                                else -> SageLight
+                            }
                         )
                         if (!unlocked) {
                             Spacer(modifier = Modifier.width(2.dp))
                             Icon(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = "Locked",
-                                tint = Color(0xFF7A8D86),
+                                tint = SageLight,
                                 modifier = Modifier.size(9.dp)
                             )
                         }
@@ -592,88 +640,320 @@ fun IsometricWorldMap(
             }
         }
 
-        // --- Map Pan & Zoom Controls (Bottom Right) ---
+        // --- Map Legend Toggle & Expanded Key (Bottom Left) ---
         Column(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 12.dp, bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .align(Alignment.BottomStart)
+                .padding(start = 12.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            // Recenter Camera on Adventurer
-            FloatingActionButton(
-                onClick = {
-                    val targetScale = 1.4f
-                    scale = targetScale
-                    val normX = animatedCharX / NATIVE_MAP_WIDTH
-                    val normY = animatedCharY / NATIVE_MAP_HEIGHT
-                    val targetBaseX = normX * fitWpx
-                    val targetBaseY = normY * fitHpx
-                    val centeredX = viewportWpx / 2f - targetBaseX * targetScale
-                    val centeredY = viewportHpx / 2f - targetBaseY * targetScale
-                    val clamped = clampPanOffsets(centeredX, centeredY, targetScale)
-                    offsetX = clamped.first
-                    offsetY = clamped.second
-                },
-                containerColor = DeepJungleGreen,
-                contentColor = GoldYellow,
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("recenter_explorer_button")
-            ) {
-                Icon(Icons.Default.MyLocation, contentDescription = "Center on Explorer", modifier = Modifier.size(18.dp))
+            if (showLegend) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = PureWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Forest700),
+                    shadowElevation = 8.dp,
+                    modifier = Modifier
+                        .widthIn(max = 224.dp)
+                        .testTag("map_legend_card")
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "LEGENDA PETA",
+                                fontFamily = CinzelFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                color = Forest900
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup legenda",
+                                tint = SageDark,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable { showLegend = false }
+                            )
+                        }
+                        HorizontalDivider(color = Sage.copy(alpha = 0.4f))
+                        LegendNodeRow(
+                            fillColor = Honey,
+                            borderColor = Forest900,
+                            label = "Level Aktif Sekarang"
+                        )
+                        LegendNodeRow(
+                            fillColor = Leaf,
+                            borderColor = PureWhite,
+                            label = "Selesai (+ Bintang)"
+                        )
+                        LegendNodeRow(
+                            fillColor = PureWhite,
+                            borderColor = Forest700,
+                            label = "Terbuka & Siap Dimainkan"
+                        )
+                        LegendNodeRow(
+                            fillColor = DisabledBg,
+                            borderColor = SageDark,
+                            label = "Masih Terkunci",
+                            showLock = true
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Sand,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Forest900),
+                                modifier = Modifier.size(16.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Flag,
+                                        contentDescription = null,
+                                        tint = Forest900,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "Level 10 (Pos Wilayah)",
+                                fontSize = 11.sp,
+                                color = Forest900,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        HorizontalDivider(color = Sage.copy(alpha = 0.35f))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Canvas(modifier = Modifier.size(width = 16.dp, height = 6.dp)) {
+                                drawLine(
+                                    color = Honey,
+                                    start = Offset(0f, size.height / 2f),
+                                    end = Offset(size.width, size.height / 2f),
+                                    strokeWidth = 2.5.dp.toPx(),
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                            Text(
+                                text = "Jalur Terbuka / Selesai",
+                                fontSize = 11.sp,
+                                color = SageDark
+                            )
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Canvas(modifier = Modifier.size(width = 16.dp, height = 6.dp)) {
+                                drawLine(
+                                    color = SageDark,
+                                    start = Offset(0f, size.height / 2f),
+                                    end = Offset(size.width, size.height / 2f),
+                                    strokeWidth = 2.dp.toPx(),
+                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f)),
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                            Text(
+                                text = "Jalur Belum Terbuka",
+                                fontSize = 11.sp,
+                                color = SageDark
+                            )
+                        }
+                        HorizontalDivider(color = Sage.copy(alpha = 0.35f))
+                        Surface(
+                            onClick = {
+                                showLegend = false
+                                onReplayGuide()
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = HoneyTint,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Forest700),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 44.dp)
+                                .testTag("legend_replay_guide_button")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                                    contentDescription = null,
+                                    tint = Forest900,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Putar Ulang Panduan",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Forest900
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
-            // Reset Map to Whole Island View
-            FloatingActionButton(
-                onClick = {
-                    scale = 1.0f
-                    val clamped = clampPanOffsets(0f, 0f, 1.0f)
-                    offsetX = clamped.first
-                    offsetY = clamped.second
-                },
-                containerColor = DeepJungleGreen,
-                contentColor = ExplorerCream,
+            Surface(
+                onClick = { showLegend = !showLegend },
+                shape = RoundedCornerShape(14.dp),
+                color = Forest900.copy(alpha = 0.94f),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, Sand),
+                shadowElevation = 6.dp,
                 modifier = Modifier
-                    .size(40.dp)
-                    .testTag("reset_map_button")
+                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                    .testTag("map_legend_button")
             ) {
-                Icon(Icons.Default.RestartAlt, contentDescription = "Reset Island Map", modifier = Modifier.size(19.dp))
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Legenda Peta",
+                        tint = Sand,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = if (showLegend) "Tutup" else "Legenda",
+                        color = PureWhite,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
+        }
 
-            // Zoom In (+)
-            FloatingActionButton(
-                onClick = {
-                    val newScale = (scale + 0.35f).coerceAtMost(3.0f)
-                    val clamped = clampPanOffsets(offsetX, offsetY, newScale)
-                    scale = newScale
-                    offsetX = clamped.first
-                    offsetY = clamped.second
-                },
-                containerColor = DeepJungleGreen,
-                contentColor = Color.White,
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("zoom_in_button")
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Zoom In", modifier = Modifier.size(18.dp))
-            }
+        // --- Grouped Map Pan & Zoom Dock (Bottom Right, >= 48dp touch targets) ---
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Forest900.copy(alpha = 0.94f),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, DarkBorderSubtle),
+            shadowElevation = 6.dp,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 12.dp, bottom = 18.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Recenter Camera on Adventurer
+                IconButton(
+                    onClick = {
+                        val targetScale = 1.4f
+                        scale = targetScale
+                        val normX = animatedCharX / NATIVE_MAP_WIDTH
+                        val normY = animatedCharY / NATIVE_MAP_HEIGHT
+                        val targetBaseX = normX * fitWpx
+                        val targetBaseY = normY * fitHpx
+                        val centeredX = viewportWpx / 2f - targetBaseX * targetScale
+                        val centeredY = viewportHpx / 2f - targetBaseY * targetScale
+                        val clamped = clampPanOffsets(centeredX, centeredY, targetScale)
+                        offsetX = clamped.first
+                        offsetY = clamped.second
+                    },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("recenter_explorer_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = "Center on Explorer",
+                        tint = Honey,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
-            // Zoom Out (-)
-            FloatingActionButton(
-                onClick = {
-                    val newScale = (scale - 0.35f).coerceAtLeast(1.0f)
-                    val clamped = clampPanOffsets(offsetX, offsetY, newScale)
-                    scale = newScale
-                    offsetX = clamped.first
-                    offsetY = clamped.second
-                },
-                containerColor = DeepJungleGreen,
-                contentColor = Color.White,
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("zoom_out_button")
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = "Zoom Out", modifier = Modifier.size(18.dp))
+                HorizontalDivider(
+                    color = DarkBorderSubtle.copy(alpha = 0.7f),
+                    modifier = Modifier.width(28.dp)
+                )
+
+                // Reset Map to Whole Island View
+                IconButton(
+                    onClick = {
+                        scale = 1.0f
+                        val clamped = clampPanOffsets(0f, 0f, 1.0f)
+                        offsetX = clamped.first
+                        offsetY = clamped.second
+                    },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("reset_map_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RestartAlt,
+                        contentDescription = "Reset Island Map",
+                        tint = Cream,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                HorizontalDivider(
+                    color = DarkBorderSubtle.copy(alpha = 0.7f),
+                    modifier = Modifier.width(28.dp)
+                )
+
+                // Zoom In (+)
+                IconButton(
+                    onClick = {
+                        val newScale = (scale + 0.35f).coerceAtMost(3.0f)
+                        val clamped = clampPanOffsets(offsetX, offsetY, newScale)
+                        scale = newScale
+                        offsetX = clamped.first
+                        offsetY = clamped.second
+                    },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("zoom_in_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Zoom In",
+                        tint = PureWhite,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                HorizontalDivider(
+                    color = DarkBorderSubtle.copy(alpha = 0.7f),
+                    modifier = Modifier.width(28.dp)
+                )
+
+                // Zoom Out (-)
+                IconButton(
+                    onClick = {
+                        val newScale = (scale - 0.35f).coerceAtLeast(1.0f)
+                        val clamped = clampPanOffsets(offsetX, offsetY, newScale)
+                        scale = newScale
+                        offsetX = clamped.first
+                        offsetY = clamped.second
+                    },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("zoom_out_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = "Zoom Out",
+                        tint = PureWhite,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 
@@ -681,8 +961,8 @@ fun IsometricWorldMap(
         lockedAlertMessage?.let { msg ->
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = Color(0xF03B1E08),
-                border = androidx.compose.foundation.BorderStroke(1.dp, AdventureOrange),
+                color = Forest900.copy(alpha = 0.95f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Honey),
                 shadowElevation = 8.dp,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -696,7 +976,7 @@ fun IsometricWorldMap(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = msg,
-                        color = ExplorerCream,
+                        color = Cream,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.weight(1f)
@@ -704,13 +984,51 @@ fun IsometricWorldMap(
                     Spacer(modifier = Modifier.width(6.dp))
                     IconButton(
                         onClick = { lockedAlertMessage = null },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = GoldYellow, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Sand, modifier = Modifier.size(16.dp))
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LegendNodeRow(
+    fillColor: Color,
+    borderColor: Color,
+    label: String,
+    showLock: Boolean = false
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = fillColor,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, borderColor),
+            shadowElevation = 1.dp,
+            modifier = Modifier.size(16.dp)
+        ) {
+            if (showLock) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = DisabledFg,
+                        modifier = Modifier.size(9.dp)
+                    )
+                }
+            }
+        }
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = Forest900,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
@@ -723,10 +1041,10 @@ fun AdventurerPin(companionId: String) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Surface(
                 shape = CircleShape,
-                color = AdventureOrange,
-                border = androidx.compose.foundation.BorderStroke(2.dp, GoldYellow),
+                color = Honey,
+                border = androidx.compose.foundation.BorderStroke(2.dp, Forest900),
                 shadowElevation = 6.dp,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(34.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.char_adventurer_explorer_1793116866013),
@@ -737,9 +1055,10 @@ fun AdventurerPin(companionId: String) {
             }
             Surface(
                 shape = RoundedCornerShape(2.dp),
-                color = GoldYellow,
+                color = Forest900,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Sand),
                 modifier = Modifier
-                    .size(width = 6.dp, height = 4.dp)
+                    .size(width = 7.dp, height = 5.dp)
                     .offset(y = (-1).dp)
             ) {}
         }
