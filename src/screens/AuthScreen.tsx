@@ -129,7 +129,7 @@ export function AuthScreen({
             alt="Word Explorer Adventure Realm"
             className="auth-hero-img"
             decoding="async"
-            fetchPriority="high"
+            {...({ fetchpriority: 'high' } as Record<string, string>)}
           />
           <div className="auth-hero-scrim" aria-hidden="true" />
           <div className="auth-hero-overlay">

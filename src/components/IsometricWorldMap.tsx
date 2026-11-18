@@ -337,7 +337,7 @@ export function IsometricWorldMap({
           width={NATIVE_MAP_WIDTH}
           height={NATIVE_MAP_HEIGHT}
           decoding="async"
-          fetchPriority="high"
+          {...({ fetchpriority: 'high' } as Record<string, string>)}
           draggable={false}
         />
 
