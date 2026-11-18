@@ -995,6 +995,40 @@ a {
   }
 }
 
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dialog-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  line-height: 1.3;
+  color: var(--color-text-on-paper);
+}
+
+.dialog-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--color-outline);
+  background: var(--color-field);
+  color: var(--color-text-on-paper);
+  cursor: pointer;
+}
+
+.dialog-close-btn:hover {
+  background: var(--color-paper-alt);
+}
+
 /* ========================
    COMMON BUTTONS & HOVER
    ======================== */

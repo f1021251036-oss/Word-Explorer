@@ -1,9 +1,11 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { CloseIcon } from './ExpeditionIcons';
 
 interface AccessibleDialogProps {
-  open: boolean;
+  open?: boolean;
   onClose: () => void;
-  labelledBy: string;
+  title?: string;
+  labelledBy?: string;
   children: ReactNode;
   maxWidthPx?: number;
 }
@@ -12,14 +14,17 @@ const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function AccessibleDialog({
-  open,
+  open = true,
   onClose,
+  title,
   labelledBy,
   children,
   maxWidthPx = 520,
 }: AccessibleDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const autoTitleId = useId();
+  const resolvedLabelledBy = labelledBy ?? (title ? autoTitleId : undefined);
 
   useEffect(() => {
     if (!open) return;
@@ -89,9 +94,24 @@ export function AccessibleDialog({
         style={{ maxWidth: `${maxWidthPx}px` }}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={labelledBy}
+        aria-labelledby={resolvedLabelledBy}
         tabIndex={-1}
       >
+        {title && (
+          <div className="dialog-header">
+            <h2 id={resolvedLabelledBy} className="dialog-title">
+              {title}
+            </h2>
+            <button
+              type="button"
+              className="dialog-close-btn"
+              aria-label="Tutup dialog"
+              onClick={onClose}
+            >
+              <CloseIcon size={18} />
+            </button>
+          </div>
+        )}
         {children}
       </div>
     </div>

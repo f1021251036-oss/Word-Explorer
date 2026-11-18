@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import {
   CheckmarkIcon,
   CompassIcon,
@@ -874,7 +874,7 @@ export function WordHuntRenderer({
 
       <div
         className="word-hunt-board"
-        style={{ '--wh-cols': cols } as React.CSSProperties}
+        style={{ '--wh-cols': cols } as CSSProperties}
       >
         {grid.map((rowList, r) =>
           rowList.map((char, c) => {
