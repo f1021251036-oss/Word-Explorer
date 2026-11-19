@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import {
   BookIcon,
   CheckmarkIcon,
@@ -71,6 +72,38 @@ export function DashboardScreen({
   const nextAvailableLevel =
     levels.find((lvl) => lvl.status === 'AVAILABLE') ?? levels[0] ?? null;
   const currentChapterName = CHAPTER_LABELS[nextAvailableLevel?.stageNumber ?? 1] ?? CHAPTER_LABELS[1];
+
+  const currentStreak = profile?.currentStreak ?? 0;
+  const dailyLevelsGoalAchieved = dailyCompletedCount >= DAILY_LEVEL_LIMIT;
+  const dailyVocabGoalAchieved =
+    totalAssignedVocab > 0 && completedVocabCount >= totalAssignedVocab;
+  const isDailyGoalAchieved = dailyLevelsGoalAchieved || dailyVocabGoalAchieved;
+
+  const [isStreakBurstActive, setIsStreakBurstActive] = useState(isDailyGoalAchieved);
+  const prevGoalRef = useRef(isDailyGoalAchieved);
+  const prevStreakRef = useRef(currentStreak);
+
+  useEffect(() => {
+    const newlyAchievedGoal = isDailyGoalAchieved && !prevGoalRef.current;
+    const streakIncreased = currentStreak > prevStreakRef.current;
+
+    if (newlyAchievedGoal || streakIncreased) {
+      setIsStreakBurstActive(true);
+    } else if (!isDailyGoalAchieved) {
+      setIsStreakBurstActive(false);
+    }
+
+    prevGoalRef.current = isDailyGoalAchieved;
+    prevStreakRef.current = currentStreak;
+  }, [isDailyGoalAchieved, currentStreak]);
+
+  useEffect(() => {
+    if (!isStreakBurstActive) return;
+    const timer = window.setTimeout(() => {
+      setIsStreakBurstActive(false);
+    }, 2400);
+    return () => window.clearTimeout(timer);
+  }, [isStreakBurstActive]);
 
   return (
     <div className="app-content-frame">
@@ -205,13 +238,40 @@ export function DashboardScreen({
         </div>
 
         {/* 4. Streak & Stars Wax Medal Cards */}
-        <ParchmentDossierCard>
+        <ParchmentDossierCard
+          className={`stat-seal-card streak-display-card ${
+            isDailyGoalAchieved ? 'is-goal-achieved' : ''
+          } ${isStreakBurstActive ? 'is-celebrating' : ''}`}
+        >
+          <span className="streak-shimmer-layer" aria-hidden="true" />
           <div className="stat-seal-header">
-            <WaxSealBadge size={34} icon={<FlameIcon size={16} />} />
+            <WaxSealBadge
+              size={34}
+              className={`streak-wax-seal ${isDailyGoalAchieved ? 'is-lit' : ''}`}
+              icon={
+                <span className="streak-flame-wrap">
+                  <FlameIcon size={16} />
+                </span>
+              }
+            />
             <span className="stat-seal-label">STREAK BELAJAR</span>
           </div>
-          <p className="stat-seal-number">{profile?.currentStreak ?? 0} Hari</p>
+          <p className="stat-seal-number streak-number-value" data-testid="dashboard_streak_value">
+            {currentStreak} Hari
+          </p>
           <p className="stat-seal-caption">Rekor Terbaik: {profile?.bestStreak ?? 0} hari</p>
+          {isDailyGoalAchieved && (
+            <span className="streak-goal-badge" role="status" data-testid="streak_goal_achieved_badge">
+              <CheckmarkIcon size={12} />
+              <span>
+                {dailyLevelsGoalAchieved && dailyVocabGoalAchieved
+                  ? 'Target Ekspedisi & Kosakata Tercapai!'
+                  : dailyLevelsGoalAchieved
+                    ? 'Target 3 Pos Harian Tercapai!'
+                    : 'Target Kosakata Harian Tercapai!'}
+              </span>
+            </span>
+          )}
         </ParchmentDossierCard>
 
         <ParchmentDossierCard>

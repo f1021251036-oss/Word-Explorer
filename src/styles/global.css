@@ -2415,6 +2415,166 @@ a {
   color: var(--color-text-muted-on-paper);
 }
 
+.streak-display-card {
+  overflow: hidden;
+  transition: border-color 260ms ease, box-shadow 260ms ease, background 260ms ease;
+}
+
+.streak-shimmer-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-reward) 42%, transparent) 48%,
+    color-mix(in srgb, #ffffff 50%, transparent) 52%,
+    transparent 78%
+  );
+  transform: translateX(-120%);
+}
+
+.streak-display-card.is-goal-achieved {
+  border-color: var(--color-reward-strong);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-reward) 16%, var(--color-field)) 0%,
+    color-mix(in srgb, var(--color-paper) 45%, var(--color-field)) 100%
+  );
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 2px color-mix(in srgb, var(--color-reward) 32%, transparent);
+}
+
+.streak-display-card.is-celebrating {
+  animation: streak-card-pop 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.streak-display-card.is-celebrating .streak-shimmer-layer {
+  animation: streak-shimmer-sweep 1100ms ease-out 120ms 1;
+}
+
+.streak-wax-seal.is-lit {
+  background: radial-gradient(circle at 35% 30%, var(--color-reward) 0%, #d96b1f 88%);
+  color: var(--color-on-reward);
+  animation: streak-seal-pulse 2.2s ease-in-out infinite;
+}
+
+.streak-flame-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.streak-wax-seal.is-lit .streak-flame-wrap {
+  animation: streak-flame-dance 1.5s ease-in-out infinite;
+  transform-origin: 50% 80%;
+}
+
+.streak-display-card.is-celebrating .streak-number-value {
+  animation: streak-number-bounce 640ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms;
+}
+
+.streak-goal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-success) 18%, var(--color-paper));
+  border: 1.5px solid var(--color-success-strong);
+  color: var(--color-success-strong);
+  font-size: 0.74rem;
+  font-weight: 800;
+  animation: streak-badge-slide 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes streak-card-pop {
+  0% {
+    transform: scale(0.97);
+  }
+  45% {
+    transform: scale(1.025);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes streak-shimmer-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(130%);
+  }
+}
+
+@keyframes streak-seal-pulse {
+  0%,
+  100% {
+    box-shadow:
+      var(--shadow-hard-sm),
+      0 0 0 0 color-mix(in srgb, var(--color-reward) 55%, transparent);
+  }
+  50% {
+    box-shadow:
+      var(--shadow-hard-sm),
+      0 0 0 7px color-mix(in srgb, var(--color-reward) 0%, transparent);
+  }
+}
+
+@keyframes streak-flame-dance {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  55% {
+    transform: scale(1.14) rotate(4deg);
+  }
+  80% {
+    transform: scale(1.05) rotate(-2deg);
+  }
+}
+
+@keyframes streak-number-bounce {
+  0% {
+    transform: scale(0.9);
+  }
+  55% {
+    transform: scale(1.14);
+    color: var(--color-reward-strong);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes streak-badge-slide {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .world-route-head {
   display: flex;
   align-items: center;
